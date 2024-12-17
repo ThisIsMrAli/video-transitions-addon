@@ -1,9 +1,12 @@
 import React from 'react'
+import ViewerBox from '../molecuels/ViewerBox';
+import FileInput from '../molecuels/FileInput';
 
 const Home = () => {
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center">
-      <h1 className="text-2xl text-red-800 font-bold">Home</h1>
+    <div className="w-full h-full flex flex-col items-center ">
+      <ViewerBox />
+      <FileInput />
     </div>
   );
 };
