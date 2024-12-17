@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer base {
+  * {
+    box-sizing: border-box;
+    user-select: none;
+    @apply !font-adobe;
+  }
+  html {
+    font-size: 16px;
+  }
+  html,
+  #root,
+  body {
+    @apply w-screen;
+    @apply h-full;
+    @apply relative;
+    @apply overflow-hidden;
+  }
+  body {
+    @apply text-sm;
+  }
+  :root {
+    --rs-slider-thumb-border: #000;
+    --rs-slider-progress: #000;
+  }
+
+  h1 {
+    @apply text-5xl font-light tracking-[-1.5px];
+  }
+
+  h2 {
+    @apply text-4xl font-light tracking-[-0.5px];
+  }
+
+  h3 {
+    @apply text-3xl font-normal tracking-[0px];
+  }
+
+  h4 {
+    @apply text-2xl font-normal tracking-[0.25px];
+  }
+  h5 {
+    @apply text-xl font-normal tracking-[0px];
+  }
+  h6 {
+    @apply text-lg font-medium tracking-[0.15px];
+  }
+  p {
+    @apply text-2xl font-normal tracking-[0.25px];
+  }
+  hr {
+    @apply w-full h-0 border-t border-expressBorder border-solid;
+  }
+
+  body {
+    @apply text-sm;
+  }
+}
+@layer components {
+  .subtitle2 {
+    @apply text-xs font-medium tracking-[0.1px];
+  }
+  .activeNav {
+    @apply bg-fonts rounded-3xl text-white;
+  }
+  .preActiveNav {
+    @apply text-white;
+  }
+  .caption {
+    @apply text-xxs font-normal tracking-[0px] leading-[110%];
+  }
+  .textover {
+    @apply whitespace-nowrap overflow-hidden text-ellipsis;
+  }
+}
+@keyframes growDown {
+  0% {
+    transform: scaleY(0);
+  }
+  80% {
+    transform: scaleY(1.1);
+  }
+  100% {
+    transform: scaleY(1);
+  }
+}
+.rc-tooltip-content {
+  margin-top: -4px !important;
+}
+div[aria-roledescription="color swatch"] {
+  border: 1px solid #929292 !important;
+}
+
+
+/* Example CSS additions */
+.bg-gray-200 {
+  background-color: #e2e8f0;
+}
+
+.outline-borderHover {
+  outline-color: #3182ce; /* Example hover color */
+}
