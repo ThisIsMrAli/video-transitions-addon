@@ -82,6 +82,16 @@ const VideoBox = ({ item }) => {
     return `${(trimEnd / videoRef.current.duration) * 100}%`;
   };
 
+  const formatTime = (timeInSeconds) => {
+    const minutes = Math.floor(timeInSeconds / 60);
+    const seconds = Math.floor(timeInSeconds % 60);
+    const milliseconds = Math.floor((timeInSeconds % 1) * 1000);
+
+    return `${minutes.toString().padStart(2, "0")}:${seconds
+      .toString()
+      .padStart(2, "0")}.${milliseconds.toString().padStart(3, "0")}`;
+  };
+
   return (
     <div className="relative group">
       <video
@@ -93,15 +103,14 @@ const VideoBox = ({ item }) => {
         <source src={item.file} type={item.type} />
         Your browser does not support the video tag.
       </video>
-
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
         <button
           onClick={handlePlay}
-          className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors mb-3"
+          className="p-2 rounded-full bg-white/30 hover:bg-white/60 transition-colors"
         >
           {isPlaying ? (
             <svg
-              className="w-5 h-5 text-white"
+              className="w-5 h-5 text-black/60 group-hover:text-black/80"
               fill="currentColor"
               viewBox="0 0 24 24"
             >
@@ -109,7 +118,7 @@ const VideoBox = ({ item }) => {
             </svg>
           ) : (
             <svg
-              className="w-5 h-5 text-white"
+              className="w-5 h-5 text-black/60 group-hover:text-black/80"
               fill="currentColor"
               viewBox="0 0 24 24"
             >
@@ -117,41 +126,47 @@ const VideoBox = ({ item }) => {
             </svg>
           )}
         </button>
+      </div>
 
-        <div ref={sliderRef} className="relative h-8">
-          <div className="absolute w-full h-1 bg-white/20 rounded-full top-1/2 -translate-y-1/2" />
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <div className="space-y-4">
+          <div ref={sliderRef} className="relative h-8">
+            <div className="absolute w-full h-1 bg-white/20 rounded-full top-1/2 -translate-y-1/2" />
 
-          <div
-            className="absolute h-1 bg-white rounded-full top-1/2 -translate-y-1/2"
-            style={{
-              left: getLeftPosition(),
-              right: `${
-                100 - (trimEnd / (videoRef.current?.duration || 1)) * 100
-              }%`,
-            }}
-          />
+            <div
+              className="absolute h-1 bg-white/90 rounded-full top-1/2 -translate-y-1/2"
+              style={{
+                left: getLeftPosition(),
+                right: `${
+                  100 - (trimEnd / (videoRef.current?.duration || 1)) * 100
+                }%`,
+              }}
+            />
 
-          <div
-            onMouseDown={(e) => handleMouseDown(e, "start")}
-            className={`absolute w-3 h-6 bg-white rounded-sm -ml-1.5 top-1/2 -translate-y-1/2 cursor-ew-resize 
-              hover:h-7 hover:w-4 transition-all duration-150
-              ${isDragging === "start" ? "h-7 w-4" : ""}`}
-            style={{ left: getLeftPosition() }}
-          >
-            <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-white px-1.5 py-0.5 rounded text-xs opacity-0 group-hover:opacity-100">
-              {Math.floor(trimStart)}s
+            <div
+              onMouseDown={(e) => handleMouseDown(e, "start")}
+              className={`absolute w-2 h-4 bg-white/90 rounded-sm -ml-1.5 top-1/2 -translate-y-1/2 cursor-ew-resize 
+                shadow-lg hover:h-7 hover:w-4 transition-all duration-150
+                ${
+                  isDragging === "start" ? "h-7 w-4 ring-2 ring-white/30" : ""
+                }`}
+              style={{ left: getLeftPosition() }}
+            >
+              <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-black/90 px-2 py-1 rounded text-[10px] text-white font-mono whitespace-nowrap opacity-0 group-hover:opacity-100">
+                {formatTime(trimStart)}
+              </div>
             </div>
-          </div>
 
-          <div
-            onMouseDown={(e) => handleMouseDown(e, "end")}
-            className={`absolute w-3 h-6 bg-white rounded-sm -mr-1.5 top-1/2 -translate-y-1/2 cursor-ew-resize 
-              hover:h-7 hover:w-4 transition-all duration-150
-              ${isDragging === "end" ? "h-7 w-4" : ""}`}
-            style={{ left: getRightPosition() }}
-          >
-            <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-white px-1.5 py-0.5 rounded text-xs opacity-0 group-hover:opacity-100">
-              {Math.floor(trimEnd)}s
+            <div
+              onMouseDown={(e) => handleMouseDown(e, "end")}
+              className={`absolute w-2 h-4 bg-white/90 rounded-sm -mr-1.5 top-1/2 -translate-y-1/2 cursor-ew-resize 
+                shadow-lg hover:h-7 hover:w-4 transition-all duration-150
+                ${isDragging === "end" ? "h-7 w-4 ring-2 ring-white/30" : ""}`}
+              style={{ left: getRightPosition() }}
+            >
+              <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-black/90 px-2 py-1 rounded text-[10px] text-white font-mono whitespace-nowrap opacity-0 group-hover:opacity-100">
+                {formatTime(trimEnd)}
+              </div>
             </div>
           </div>
         </div>
