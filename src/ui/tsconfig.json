@@ -3,5 +3,5 @@
     "compilerOptions": {
         "lib": ["dom"]
     },
-    "include": ["./**/*"]
+    "include": ["./**/*", "../store"]
 }

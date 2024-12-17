@@ -14,7 +14,7 @@ import {
 } from "react-router-dom";
 import Home from "./creatures/Home";
 import { useAtom } from "jotai";
-import { selectFileDialogAtom } from "../store/general";
+import { selectFileDialogAtom } from "../../store/general";
 import Render from "./creatures/Render";
 
 const App = ({
@@ -33,7 +33,9 @@ const App = ({
     {
       path: "/",
       element: (
-        <div className={`bg-white w-full h-full flex flex-col relative py-1 px-1`}>
+        <div
+          className={`bg-white w-full h-full flex flex-col relative py-1 px-1`}
+        >
           <div className="h-full overflow-hidden">
             <Outlet />
           </div>
@@ -63,14 +65,13 @@ const App = ({
         },
         {
           path: "/render",
-          element: <Render/>,
+          element: <Render />,
         },
       ],
     },
   ]);
 
   return (
-
     <Provider
       theme={spectrumTheme}
       UNSAFE_style={{ height: "100%" }}

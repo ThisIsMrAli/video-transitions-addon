@@ -1,6 +1,6 @@
 import { useAtom } from "jotai";
 import React, { useRef, useState, DragEvent } from "react";
-// import { mediaAtom } from "./../../store/playerStore";
+import { layersAtom } from "../../../store/general";
 import { convertFileToBase64 } from "./../../../helpers/utils";
 import { ToastQueue } from "@react-spectrum/toast";
 // Import the upload icon
@@ -8,14 +8,36 @@ import { ToastQueue } from "@react-spectrum/toast";
 const FileInput = () => {
   const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const [layers, setLayers] = useAtom(layersAtom);
 
   const [isDragging, setIsDragging] = useState(false);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size <= 200 * 1024 * 1024) { // 200MB in bytes
-       // setMedia({ file, fileUrl: await convertFileToBase64(file) });
+      if (file.size <= 200 * 1024 * 1024) {
+        // 200MB in bytes
+
+        if (file) {
+          const url = URL.createObjectURL(file);
+
+          const video = document.createElement("video");
+          video.src = url;
+          video.onloadedmetadata = () => {
+            setLayers([
+              ...layers,
+              {
+                assetType: "media",
+                file: url,
+                type: file.type,
+                name: file.name,
+                start: 0,
+                end: video.duration,
+              },
+            ]);
+            // onTrimChange(position, { start: 0, end: video.duration });
+          };
+        }
       } else {
         ToastQueue.negative("File size exceeds 200MB limit", { timeout: 3000 });
       }
@@ -41,7 +63,8 @@ const FileInput = () => {
     const file = e.dataTransfer.files[0];
     const allowedTypes = ["image/png", "image/jpeg", "video/mp4", "video/webm"];
     if (file && allowedTypes.includes(file.type)) {
-      if (file.size <= 200 * 1024 * 1024) { // 200MB in bytes
+      if (file.size <= 200 * 1024 * 1024) {
+        // 200MB in bytes
         //setMedia({ file, fileUrl: await convertFileToBase64(file) });
       } else {
         ToastQueue.negative("File size exceeds 200MB limit", { timeout: 3000 });
@@ -87,9 +110,11 @@ const FileInput = () => {
       <span
         className={`chooseImage text-[14px] text-[#242424] group-hover:text-borderHover font-bold`}
       >
-        upload media
+        add media
       </span>
-      <span className="font-normal text-[12px]">Supported formats: MP4, WebM, JPEG, PNG</span>
+      <span className="font-normal text-[12px]">
+        Supported formats: MP4, WebM, JPEG, PNG
+      </span>
       <span className="font-normal text-[12px]">Maximum file size: 200MB</span>
     </div>
   );
