@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { DocumentSandboxApi } from "../models/DocumentSandboxApi";
 import App from "./components/App";
 import "./global.css";
+import 'react-loading-skeleton/dist/skeleton.css'
 
 import addOnUISdk, { RuntimeType } from "https://new.express.adobe.com/static/add-on-sdk/sdk.js";
 

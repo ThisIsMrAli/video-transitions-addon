@@ -1,15 +1,17 @@
 import { useAtom } from "jotai";
 import React, { useRef, useState, DragEvent } from "react";
-import { layersAtom } from "../../../store/general";
+import { layersAtom, showTransitionSelectorOverlayAtom } from "../../../store/general";
 import { convertFileToBase64 } from "../../../helpers/utils";
 import { ToastQueue } from "@react-spectrum/toast";
 // Import the upload icon
 
 const TransitionInput = () => {
   const [layers, setLayers] = useAtom(layersAtom);
+  const [isOpen, setIsOpen] = useAtom(showTransitionSelectorOverlayAtom);
 
   return (
     <div
+      onClick={() => setIsOpen(true)}
       className={`cursor-pointer bg-[#f8f8f8] overflow-hidden flex flex-col justify-center items-center w-[150px] h-[150px] group rounded-[8px] outline outline-2 outline-[#EBEBEB] 
       `}
     >

@@ -3,6 +3,7 @@ import React, { useRef, useState, DragEvent } from "react";
 import { layersAtom } from "../../../store/general";
 import { convertFileToBase64 } from "./../../../helpers/utils";
 import { ToastQueue } from "@react-spectrum/toast";
+import { uuid } from "short-uuid";
 // Import the upload icon
 
 const FileInput = () => {
@@ -26,7 +27,8 @@ const FileInput = () => {
           video.onloadedmetadata = () => {
             setLayers([
               ...layers,
-              {
+              { 
+                id: uuid(),
                 assetType: "media",
                 file: url,
                 type: file.type,
