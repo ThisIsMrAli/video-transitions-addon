@@ -142,10 +142,10 @@ const VideoBox = ({ item }) => {
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
         <div className="space-y-4">
           <div ref={sliderRef} className="relative h-8">
-            <div className="absolute w-full h-1 bg-white/20 rounded-full top-1/2 -translate-y-1/2" />
+            <div className="absolute w-full h-1 bg-white/20 top-1/2 -translate-y-1/2" />
 
             <div
-              className="absolute h-1 bg-white/90 rounded-full top-1/2 -translate-y-1/2"
+              className="absolute h-1 bg-white/90 top-1/2 -translate-y-1/2"
               style={{
                 left: getLeftPosition(),
                 right: `${
