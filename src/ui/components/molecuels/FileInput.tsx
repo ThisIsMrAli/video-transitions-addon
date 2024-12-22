@@ -85,7 +85,7 @@ const FileInput = () => {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`cursor-pointer bg-[#f8f8f8] overflow-hidden flex flex-col justify-center items-center w-[220px] h-[220px] group rounded-[8px] outline outline-2 outline-[#EBEBEB] 
+      className={`cursor-pointer bg-[#f8f8f8] overflow-hidden flex flex-col justify-center items-center w-[150px] h-[150px] group rounded-[8px] outline outline-2 outline-[#EBEBEB] 
         ${
           isDragging
             ? "bg-gray-200 outline-borderHover"
@@ -99,23 +99,23 @@ const FileInput = () => {
         type="file"
         id="avatar"
         name="avatar"
-        accept=".png,.jpg,.jpeg,.mp4,.webm"
+        accept=".mp4,.webm"
         max="209715200" // 200MB in bytes
       />
       <img
         src={"./icons/upload.png"}
         alt="Upload"
-        className="w-20 mt-[-10px]"
+        className="w-[40px] mt-[-10px]"
       />
       <span
         className={`chooseImage text-[14px] text-[#242424] group-hover:text-borderHover font-bold`}
       >
-        add media
+        Add Video
       </span>
-      <span className="font-normal text-[12px]">
-        Supported formats: MP4, WebM, JPEG, PNG
+      <span className="font-normal text-[11px]">
+        Supported formats: MP4, WebM
       </span>
-      <span className="font-normal text-[12px]">Maximum file size: 200MB</span>
+      <span className="font-normal text-[11px]">Maximum file size: 200MB</span>
     </div>
   );
 };

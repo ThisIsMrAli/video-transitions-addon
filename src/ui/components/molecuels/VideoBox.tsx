@@ -85,18 +85,18 @@ const VideoBox = ({ item }) => {
   const formatTime = (timeInSeconds) => {
     const minutes = Math.floor(timeInSeconds / 60);
     const seconds = Math.floor(timeInSeconds % 60);
-    const milliseconds = Math.floor((timeInSeconds % 1) * 1000);
+    const milliseconds = Math.floor((timeInSeconds % 1) * 100);
 
     return `${minutes.toString().padStart(2, "0")}:${seconds
       .toString()
-      .padStart(2, "0")}.${milliseconds.toString().padStart(3, "0")}`;
+      .padStart(2, "0")}.${milliseconds.toString().padStart(2, "0")}`;
   };
 
   return (
-    <div className="relative group">
+    <div className="relative group w-[150px] h-[150px] bg-[#f8f8f8] overflow-hidden outline outline-2 outline-[#EBEBEB] rounded-[8px]">
       <video
         ref={videoRef}
-        className="w-full"
+        className="w-full h-full object-contain"
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
       >
