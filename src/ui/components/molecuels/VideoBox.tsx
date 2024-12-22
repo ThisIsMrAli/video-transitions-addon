@@ -83,19 +83,30 @@ const VideoBox = ({ item }) => {
   };
 
   const formatTime = (timeInSeconds) => {
-    const minutes = Math.floor(timeInSeconds / 60);
+    const hours = Math.floor(timeInSeconds / 3600);
+    const minutes = Math.floor((timeInSeconds % 3600) / 60);
     const seconds = Math.floor(timeInSeconds % 60);
     const milliseconds = Math.floor((timeInSeconds % 1) * 100);
 
-    return `${minutes.toString().padStart(2, "0")}:${seconds
-      .toString()
-      .padStart(2, "0")}.${milliseconds.toString().padStart(2, "0")}`;
+    let timeString = "";
+    if (hours > 0) {
+      timeString = `${hours}:${minutes.toString().padStart(2, "0")}:${seconds
+        .toString()
+        .padStart(2, "0")}`;
+    } else {
+      timeString = `${minutes.toString().padStart(2, "0")}:${seconds
+        .toString()
+        .padStart(2, "0")}`;
+    }
+
+    return `${timeString}.${milliseconds.toString().padStart(2, "0")}`;
   };
 
   return (
     <div className="relative group w-[150px] h-[150px] bg-[#f8f8f8] overflow-hidden outline outline-2 outline-[#EBEBEB] rounded-[8px]">
       <video
         ref={videoRef}
+        muted={true}
         className="w-full h-full object-contain"
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
@@ -146,13 +157,13 @@ const VideoBox = ({ item }) => {
             <div
               onMouseDown={(e) => handleMouseDown(e, "start")}
               className={`absolute w-2 h-4 bg-white/90 rounded-sm -ml-1.5 top-1/2 -translate-y-1/2 cursor-ew-resize 
-                shadow-lg hover:h-7 hover:w-4 transition-all duration-150
+                shadow-lg hover:h-6 hover:w-3 transition-all duration-150
                 ${
                   isDragging === "start" ? "h-7 w-4 ring-2 ring-white/30" : ""
                 }`}
               style={{ left: getLeftPosition() }}
             >
-              <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-black/90 px-2 py-1 rounded text-[10px] text-white font-mono whitespace-nowrap opacity-0 group-hover:opacity-100">
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-black/90 px-1 py-0.5 rounded text-[10px] text-white font-mono whitespace-nowrap opacity-0 group-hover:opacity-100">
                 {formatTime(trimStart)}
               </div>
             </div>
@@ -160,11 +171,11 @@ const VideoBox = ({ item }) => {
             <div
               onMouseDown={(e) => handleMouseDown(e, "end")}
               className={`absolute w-2 h-4 bg-white/90 rounded-sm -mr-1.5 top-1/2 -translate-y-1/2 cursor-ew-resize 
-                shadow-lg hover:h-7 hover:w-4 transition-all duration-150
+                shadow-lg hover:h-6 hover:w-3 transition-all duration-150
                 ${isDragging === "end" ? "h-7 w-4 ring-2 ring-white/30" : ""}`}
               style={{ left: getRightPosition() }}
             >
-              <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-black/90 px-2 py-1 rounded text-[10px] text-white font-mono whitespace-nowrap opacity-0 group-hover:opacity-100">
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-black/90 px-1 py-0.5 rounded text-[10px] text-white font-mono whitespace-nowrap opacity-0 group-hover:opacity-100">
                 {formatTime(trimEnd)}
               </div>
             </div>
