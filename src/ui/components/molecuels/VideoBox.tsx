@@ -8,8 +8,8 @@ import { useAtom } from "jotai";
 const VideoBox = ({ item }) => {
   const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [trimStart, setTrimStart] = useState(0);
-  const [trimEnd, setTrimEnd] = useState(0);
+  const trimStart = item.start;
+  const trimEnd = item.end;
   const [isDragging, setIsDragging] = useState(null);
   const sliderRef = useRef(null);
   const [showContextMenu, setShowContextMenu] = useState(false);
@@ -34,11 +34,7 @@ const VideoBox = ({ item }) => {
     }
   };
 
-  const handleLoadedMetadata = () => {
-    if (videoRef.current) {
-      setTrimEnd(videoRef.current.duration);
-    }
-  };
+
 
   const calculatePosition = (clientX) => {
     if (!videoRef.current || !sliderRef.current) return 0;
@@ -54,13 +50,34 @@ const VideoBox = ({ item }) => {
 
   const handleMouseMove = (e) => {
     if (!isDragging) return;
+    
 
     const newTime = calculatePosition(e.clientX);
     if (isDragging === "start") {
-      setTrimStart(Math.min(newTime, trimEnd));
+      const newLayers = layers.map((layer) => {
+        if (layer.id === item.id) {
+          return {
+            ...layer,
+            start: Math.min(newTime, trimEnd)
+          };
+        }
+        return layer;
+      });
+      setLayers(newLayers);
+   
       if (videoRef.current) videoRef.current.currentTime = newTime;
     } else {
-      setTrimEnd(Math.max(newTime, trimStart));
+    //  setTrimEnd(Math.max(newTime, trimStart));
+      const newLayers = layers.map((layer) => {
+        if (layer.id === item.id) {
+          return {
+            ...layer,
+            end: Math.max(newTime, trimStart)
+          };
+        }
+        return layer;
+      });
+      setLayers(newLayers);
     }
   };
 
@@ -153,6 +170,10 @@ const VideoBox = ({ item }) => {
 
     input.click();
   };
+
+  const handeVideoTrimChange=()=>{
+    
+  }
   return (
     <div className="relative group w-[150px] h-[150px] bg-[#f8f8f8] overflow-hidden outline outline-2 outline-[#EBEBEB] rounded-[8px]">
       {true && (
@@ -192,7 +213,7 @@ const VideoBox = ({ item }) => {
         muted={true}
         className="w-full h-full object-contain"
         onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
+      
       >
         <source src={item.file} type={item.type} />
         Your browser does not support the video tag.
