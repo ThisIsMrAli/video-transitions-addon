@@ -5,11 +5,10 @@ import Skeleton from "react-loading-skeleton";
 import { uuid } from "short-uuid";
 import { layersAtom } from "../../../store/general";
 import { useAtom } from "jotai";
-const TransitionItem = ({ selected, category, template, onClose }) => {
+const TransitionItem = ({ selected, category, template, onClose, onClick }) => {
   const [ref, hovering] = useHover();
   const [animationData, setAnimationData] = useState(null);
-  const [layers, setLayers] = useAtom(layersAtom);
-  
+
 
   const width = 100;
   const height = template.ratio == "h" ? 56 : template.ratio == "s" ? 100 : 177;
@@ -39,14 +38,19 @@ const TransitionItem = ({ selected, category, template, onClose }) => {
     }, 1);
   }, []);
   const handleClick = () => {
-    setLayers([
-      ...layers,
-      {
-        id: uuid(),
-        assetType: "transition",
-        animationData: animationData,
-      },
-    ]);
+    // setLayers([
+    //   ...layers,
+    //   {
+    //     id: uuid(),
+    //     assetType: "transition",
+    //     animationData: animationData,
+    //   },
+    // ]);
+    onClick({
+      id: uuid(),
+      assetType: "transition",
+      animationData: animationData,
+    });
     onClose();
   };
 

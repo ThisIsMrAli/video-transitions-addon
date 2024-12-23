@@ -17,9 +17,13 @@ const Home = () => {
       <ViewerBox />
       {layers.map((layer, index) =>
         layer.assetType == "media" ? (
-          <VideoBox key={index} item={layer} />
+          <VideoBox key={layer.id} item={layer} />
         ) : (
-          <TransitionBox key={index} animationData={layer.animationData} />
+          <TransitionBox
+            key={layer.id}
+            item={layer}
+            animationData={layer.animationData}
+          />
         )
       )}
       {layers.length > 0 && layers[layers.length - 1].assetType == "media" ? (

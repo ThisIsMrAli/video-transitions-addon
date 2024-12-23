@@ -1,6 +1,9 @@
 import React, { useRef } from "react";
 import { MdOutlineClose } from "react-icons/md";
-import { showTransitionSelectorOverlayAtom } from "../../../store/general";
+import {
+  layersAtom,
+  showTransitionSelectorOverlayAtom,
+} from "../../../store/general";
 import { useAtom } from "jotai";
 
 import data from "./../../../assets/svgData.json";
@@ -8,12 +11,22 @@ import TransitionItem from "../molecuels/TransitionItem";
 const TransitionSelectorOverlay = () => {
   const [isOpen, setIsOpen] = useAtom(showTransitionSelectorOverlayAtom);
   const dialogRef = useRef(null);
+  const [layers, setLayers] = useAtom(layersAtom);
   const handleClose = () => {
-    setIsOpen(false);
+    setIsOpen({ open: false, index: -1 });
+  };
+  const handleTransitionClick = (item) => {
+    if (isOpen.index == -1) setLayers([...layers, item]);
+    else {
+      const newLayers = [...layers];
+      newLayers[isOpen.index] = item;
+      setLayers(newLayers);
+    }
+    setIsOpen({ open: false, index: -1 });
   };
 
   return (
-    isOpen && (
+    isOpen.open && (
       <div
         ref={dialogRef}
         className="fixed flex flex-col items-center justify-center top-0 z-50 left-0 w-screen h-full bg-[rgba(0,0,0,0.7)] px-[25px]"
@@ -32,6 +45,7 @@ const TransitionSelectorOverlay = () => {
               {data[0].items.map((item) => {
                 return (
                   <TransitionItem
+                    onClick={handleTransitionClick}
                     onClose={handleClose}
                     key={item.id}
                     selected={false}

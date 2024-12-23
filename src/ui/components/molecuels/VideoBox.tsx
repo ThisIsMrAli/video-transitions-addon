@@ -1,4 +1,9 @@
+import { ToastQueue } from "@react-spectrum/toast";
 import React, { useRef, useState, useEffect } from "react";
+import { MdMoreHoriz } from "react-icons/md";
+import { uuid } from "short-uuid";
+import { layersAtom } from "../../../store/general";
+import { useAtom } from "jotai";
 
 const VideoBox = ({ item }) => {
   const videoRef = useRef(null);
@@ -7,7 +12,9 @@ const VideoBox = ({ item }) => {
   const [trimEnd, setTrimEnd] = useState(0);
   const [isDragging, setIsDragging] = useState(null);
   const sliderRef = useRef(null);
-
+  const [showContextMenu, setShowContextMenu] = useState(false);
+  const contextRef = useRef(null);
+  const [layers, setLayers] = useAtom(layersAtom);
   const handlePlay = () => {
     if (videoRef.current) {
       if (isPlaying) {
@@ -101,9 +108,85 @@ const VideoBox = ({ item }) => {
 
     return `${timeString}.${milliseconds.toString().padStart(2, "0")}`;
   };
+  const handleMoreClick = (e, selected) => {
+    e.stopPropagation();
+    setShowContextMenu(selected);
+  };
 
+  const handleReplaceVideo = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".mp4,.webm";
+    input.max = "209715200"; // 200MB in bytes
+
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        if (file.size <= 200 * 1024 * 1024) {
+          const url = URL.createObjectURL(file);
+          const video = document.createElement("video");
+          video.src = url;
+          video.onloadedmetadata = () => {
+            const newLayers = layers.map((layer) => {
+              if (layer.id === item.id) {
+                return {
+                  id: uuid(),
+                  assetType: "media",
+                  file: url,
+                  type: file.type,
+                  name: file.name,
+                  start: 0,
+                  end: video.duration,
+                };
+              }
+              return layer;
+            });
+            setLayers(newLayers);
+          };
+        } else {
+          ToastQueue.negative("File size exceeds 200MB limit", {
+            timeout: 3000,
+          });
+        }
+      }
+    };
+
+    input.click();
+  };
   return (
     <div className="relative group w-[150px] h-[150px] bg-[#f8f8f8] overflow-hidden outline outline-2 outline-[#EBEBEB] rounded-[8px]">
+      {true && (
+        <div
+          ref={contextRef}
+          className="items-end space-y-1 right-1 top-1 hidden  group-hover:flex flex-col absolute z-50"
+        >
+          <div className="items-center justify-center h-[14px] flex overflow-hidden bg-white rounded-[4px]">
+            <MdMoreHoriz
+              onClick={(e) => handleMoreClick(e, !showContextMenu)}
+              color="black"
+              size={19}
+            />
+          </div>
+
+          <ul
+            className={`${
+              showContextMenu ? "flex" : "hidden"
+            } rounded-[4px] bg-white flex-col z-50  text-[11px]`}
+          >
+            <li
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleReplaceVideo();
+              }}
+              tabIndex={0}
+              className="text-[#484848] hover:text-black flex items-center w-full p-1"
+            >
+              Replace Video
+            </li>
+          </ul>
+        </div>
+      )}
       <video
         ref={videoRef}
         muted={true}

@@ -11,7 +11,7 @@ const TransitionInput = () => {
 
   return (
     <div
-      onClick={() => setIsOpen(true)}
+      onClick={() => setIsOpen({ open: true, index: -1 })}
       className={`cursor-pointer bg-[#f8f8f8] overflow-hidden flex flex-col justify-center items-center w-[150px] h-[150px] group rounded-[8px] outline outline-2 outline-[#EBEBEB] 
       `}
     >
