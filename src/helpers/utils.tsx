@@ -464,3 +464,54 @@ export const adjustMeshScale = (tex, containerWidth, containerHeight) => {
 
   return { x: scaleX, y: scaleY };
 };
+
+export function rgbaToHex(rgba) {
+  const r = rgba[0];
+  const g = rgba[1];
+  const b = rgba[2];
+  const a = rgba[3];
+
+  if (
+    r < 0 ||
+    r > 255 ||
+    g < 0 ||
+    g > 255 ||
+    b < 0 ||
+    b > 255 ||
+    a < 0 ||
+    a > 1
+  ) {
+    throw new Error("RGBA values out of range");
+  }
+
+  const hexR = r.toString(16).padStart(2, "0");
+  const hexG = g.toString(16).padStart(2, "0");
+  const hexB = b.toString(16).padStart(2, "0");
+
+  return `#${hexR}${hexG}${hexB}`;
+}
+
+export function hexToRGBA(hex, alpha) {
+  hex = hex.replace(/^#/, "");
+
+  if (hex.length === 3) {
+    hex = hex
+      .split("")
+      .map(function (char) {
+        return char + char;
+      })
+      .join("");
+  }
+
+  const bigint = parseInt(hex, 16);
+
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+
+  if (alpha !== undefined) {
+    return [r, g, b, alpha];
+  } else {
+    return [r, g, b, alpha];
+  }
+}
