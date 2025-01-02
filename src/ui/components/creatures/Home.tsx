@@ -8,9 +8,10 @@ import TransitionInput from "../molecuels/TransitionInput";
 import TransitionSelectorOverlay from "../organism/TransitionSelectorOverlay";
 import TransitionItem from "../molecuels/TransitionItem";
 import TransitionBox from "../molecuels/TransitionBox";
+import { cloneDeep } from "lodash";
 
 const Home = () => {
-  const [layers] = useAtom(layersAtom);
+  const [layers, setLayers] = useAtom(layersAtom);
   return (
     <div className="w-full h-full flex flex-col items-center space-y-4 ">
       <TransitionSelectorOverlay />
@@ -22,7 +23,11 @@ const Home = () => {
           <TransitionBox
             key={layer.id}
             item={layer}
-            animationData={layer.animationData}
+            setItem={(item) => {
+              const newLayers = cloneDeep(layers);
+              newLayers[index] = item;
+              setLayers(newLayers);
+            }}
           />
         )
       )}

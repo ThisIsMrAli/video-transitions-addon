@@ -12,9 +12,9 @@ import { MdMoreHoriz } from "react-icons/md";
 import LottieWebParser from "./../../../lottie-web-parser";
 import { cloneDeep, isEqual } from "lodash";
 import ColorInput from "../atoms/ColorInput";
-const TransitionBox = ({ animationData, item }) => {
+const TransitionBox = ({ item, setItem }) => {
   const [colors, setColors] = useState([]);
-  const selectedItemAnimationData = animationData;
+  const selectedItemAnimationData = item.animationData;
   const [ref, hovering] = useHover();
   const [layers, setLayers] = useAtom(layersAtom);
   const [showContextMenu, setShowContextMenu] = useState(false);
@@ -75,7 +75,7 @@ const TransitionBox = ({ animationData, item }) => {
         newAnimationData
       );
     }
-    // setSelectedItemAnimationData(newAnimationData);
+    setItem({ ...item, animationData: newAnimationData });
   };
   return (
     <div
@@ -118,7 +118,7 @@ const TransitionBox = ({ animationData, item }) => {
         style={{ backgroundColor: "black", height: height }}
         className="w-[100px] border-2 hover:border-blue-500 rounded-lg overflow-hidden flex flex-col items-center justify-center"
       >
-        {animationData && Object.keys(animationData).length > 0 ? (
+        {item.animationData && Object.keys(item.animationData).length > 0 ? (
           <>
             {false ? (
               <img />
@@ -127,7 +127,7 @@ const TransitionBox = ({ animationData, item }) => {
                 loop
                 play={hovering || true}
                 style={{ width: "100%" }}
-                animationData={animationData}
+                animationData={item.animationData}
               />
             )}
           </>
