@@ -5,6 +5,7 @@ import Skeleton from "react-loading-skeleton";
 import { uuid } from "short-uuid";
 import { layersAtom } from "../../../store/general";
 import { useAtom } from "jotai";
+import Lottie from "react-lottie-player";
 const TransitionItem = ({ selected, category, template, onClose, onClick }) => {
   const [ref, hovering] = useHover();
   const [animationData, setAnimationData] = useState(null);
@@ -68,7 +69,7 @@ const TransitionItem = ({ selected, category, template, onClose, onClick }) => {
           {false ? (
             <img />
           ) : (
-            <LottieLight
+            <Lottie
               loop
               play={hovering || true}
               style={{ width: "100%" }}

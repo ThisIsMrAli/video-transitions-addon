@@ -81,7 +81,7 @@ function replaceColor(rgba, path, animationData) {
     }
     const [r, g, b, a] = rgba;
     const target = get(path, animationData);
-    if (target.nm == 'BG MAIN') {
+    if (target.ty == 1) {
         target.sc = rgbaToHex(rgba);
     } else if (target.v && target.v.k) {
         // Effect

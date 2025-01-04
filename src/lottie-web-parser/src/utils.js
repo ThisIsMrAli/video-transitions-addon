@@ -66,12 +66,9 @@ export function getNewColors(animationData, startingPath, existingColorPaths = [
     }
 
     layersOrShapes.forEach((el, layerIndex) => {
-        if (!Array.isArray(el.shapes) && el.nm !== 'BG MAIN') {
-            return;
-        }
-
+  
         const layerInfo = { name: el.nm, shapes: [] };
-        if (el.nm == 'BG MAIN' && el.ty == 1) {
+        if (el.ty == 1) {
             const meta = {
                 name: el.nm,
                 type: el.ty,
@@ -83,6 +80,10 @@ export function getNewColors(animationData, startingPath, existingColorPaths = [
             existingColorPaths.push(meta.path);
           
         } else {
+            if (!Array.isArray(el.shapes) && el.nm !== 'BG MAIN') {
+                return;
+            }
+    
             el.shapes.forEach((outerShape, outerShapeIndex) => {
                 const actualShapes = outerShape.it || [outerShape];
 

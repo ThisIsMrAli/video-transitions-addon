@@ -12,6 +12,7 @@ import { MdMoreHoriz } from "react-icons/md";
 import LottieWebParser from "./../../../lottie-web-parser";
 import { cloneDeep, isEqual } from "lodash";
 import ColorInput from "../atoms/ColorInput";
+import Lottie from "react-lottie-player";
 const TransitionBox = ({ item, setItem }) => {
   const [colors, setColors] = useState([]);
   const selectedItemAnimationData = item.animationData;
@@ -22,18 +23,32 @@ const TransitionBox = ({ item, setItem }) => {
   const width = 100;
   const height = 100;
   const [isOpen, setIsOpen] = useAtom(showTransitionSelectorOverlayAtom);
+  const prevSelectedItemAnimationData = useRef();
   useEffect(() => {
     if (
       selectedItemAnimationData &&
       Object.keys(selectedItemAnimationData).length > 0
     ) {
       //@ts-ignore
+      if (
+        prevSelectedItemAnimationData.current &&
+        //@ts-ignore
+        prevSelectedItemAnimationData.current.nm ==
+          selectedItemAnimationData.nm &&
+        //@ts-ignore
+        prevSelectedItemAnimationData.current.layers.length ==
+          selectedItemAnimationData.layers.length &&
+        //@ts-ignore
+        prevSelectedItemAnimationData.current.op == selectedItemAnimationData.op
+      )
+        return;
 
       const rawDataColors = LottieWebParser.parseColors(
         selectedItemAnimationData
       );
 
       const colors = [];
+
 
       rawDataColors.forEach((element) => {
         element.shapes.forEach((sh) => {
@@ -48,8 +63,9 @@ const TransitionBox = ({ item, setItem }) => {
         });
       });
 
-      console.log(colors);
+
       setColors([...colors]);
+      prevSelectedItemAnimationData.current = selectedItemAnimationData;
     }
   }, [selectedItemAnimationData]);
   const handleMoreClick = (e, selected) => {
@@ -123,7 +139,7 @@ const TransitionBox = ({ item, setItem }) => {
             {false ? (
               <img />
             ) : (
-              <LottieLight
+              <Lottie
                 loop
                 play={hovering || true}
                 style={{ width: "100%" }}
@@ -144,6 +160,7 @@ const TransitionBox = ({ item, setItem }) => {
           />
         ))}
       </div>
+
     </div>
   );
 };
