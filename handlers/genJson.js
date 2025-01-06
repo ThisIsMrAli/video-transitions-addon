@@ -47,9 +47,9 @@ fs.readdir(svgDirectory, (err, mainFolders) => {
               cat.items.push({
                 id: uuid(),
                 name: file.replace(".json", ""),
-                ratio: "s",
+                ratio: cat.name == "Horizontal" ? "h" : cat.name == "Vertical" ? "v" : "s",
                 type: type,
-                // isFree: file.indexOf("-f.json") > -1,
+                // isFree: ,
               });
             }
           });

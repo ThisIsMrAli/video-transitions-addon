@@ -1,1 +1,471 @@
-[{"id":"7d765341-3737-4396-a428-179ede97a932","name":"cat1","items":[{"id":"6d458035-047e-4bfd-bcb8-eb6a1c02eedd","name":"Transition 01","ratio":"s","type":"general"},{"id":"6982b7f4-2d5f-4508-9723-aec93e8e8cd5","name":"Transition 02","ratio":"s","type":"general"},{"id":"e72f604c-9e5c-4fe0-be44-d66639957dff","name":"Transition 03","ratio":"s","type":"general"},{"id":"56f99514-02fa-4391-8a81-66c517e676b2","name":"Transition 04","ratio":"s","type":"general"},{"id":"78e90854-508d-4a16-a224-1aa7d5cd5bd2","name":"Transition 05","ratio":"s","type":"general"},{"id":"d5cc59be-8b2b-4bf1-b113-7e43fc9e78b2","name":"Transition 06","ratio":"s","type":"general"},{"id":"ade58f32-5eb1-4683-9365-4fee6b8899c4","name":"Transition 07","ratio":"s","type":"general"},{"id":"6fec0140-a9b3-4080-91be-b1c895d2e238","name":"Transition 08","ratio":"s","type":"general"},{"id":"06581056-c094-47df-aa5d-15adc44d32e1","name":"Transition 09","ratio":"s","type":"general"},{"id":"59c77ce3-e983-4713-a151-11722bcee9e5","name":"Transition 10","ratio":"s","type":"general"},{"id":"cdfacd79-f02b-4e3c-b7a7-cdd6a9b8b51b","name":"Transition 11","ratio":"s","type":"general"},{"id":"5f2159e9-a098-4299-95a1-004ca10eff88","name":"Transition 12","ratio":"s","type":"general"},{"id":"c9f566b4-4f9e-4dfc-9e21-c3e57c841933","name":"Transition 13","ratio":"s","type":"general"},{"id":"778354fe-1138-4c69-9dac-92ff03a5786e","name":"Transition 14","ratio":"s","type":"general"},{"id":"c8850e5b-e667-4682-9fc9-c6db2466fd84","name":"Transition 15","ratio":"s","type":"general"},{"id":"c36ae103-bf98-4a0e-922b-4e4da9171607","name":"Transition 16","ratio":"s","type":"general"},{"id":"e20c8731-9654-44d9-9317-90dcdf855570","name":"Transition 17","ratio":"s","type":"general"},{"id":"fa1d0ffa-32dd-43f1-91cc-8780b0baff55","name":"Transition 18","ratio":"s","type":"general"},{"id":"b0efc4fc-1961-4a7a-abae-bd1ca124e0c4","name":"Transition 19","ratio":"s","type":"general"},{"id":"4b052500-8a05-47c0-93e3-5f245cf178c5","name":"Transition 20","ratio":"s","type":"general"},{"id":"e2fbf752-9d1c-4eb2-a9d4-0f9a2421a485","name":"Transition 21","ratio":"s","type":"general"}]}]
+[
+    {
+      "id": "0eef3834-8b21-4573-8c49-182f8a765919",
+      "name": "Horizontal",
+      "items": [
+        {
+          "id": "bd647d04-c015-4ac4-a341-7ead5ba9ee49",
+          "name": "Transition 01 - H",
+          "ratio": "h",
+          "type": "general"
+        },
+        {
+          "id": "6a187e32-2089-442c-aaa2-c6e567ff821b",
+          "name": "Transition 02 - H",
+          "ratio": "h",
+          "type": "general"
+        },
+        {
+          "id": "393b936f-fb67-4ecd-9189-beba7bc24a46",
+          "name": "Transition 03 - H",
+          "ratio": "h",
+          "type": "general"
+        },
+        {
+          "id": "648410d7-f843-4d3f-aa25-7a6ec86ad9ab",
+          "name": "Transition 04 - H",
+          "ratio": "h",
+          "type": "general"
+        },
+        {
+          "id": "f5df1813-fb62-4c45-aa12-2621b7d7c530",
+          "name": "Transition 05 - H",
+          "ratio": "h",
+          "type": "general"
+        },
+        {
+          "id": "f5ca8ca5-02a7-4f58-ac96-23e1dd28e9f4",
+          "name": "Transition 06 - H",
+          "ratio": "h",
+          "type": "general"
+        },
+        {
+          "id": "bea50b2f-99ac-4273-9a23-cdf4bb5c94f7",
+          "name": "Transition 07 - H",
+          "ratio": "h",
+          "type": "general"
+        },
+        {
+          "id": "ff7dfd20-dcff-4aa7-9e85-8ab410cab9da",
+          "name": "Transition 08 - H",
+          "ratio": "h",
+          "type": "general"
+        },
+        {
+          "id": "10862962-0828-47a8-9f50-9346dd1c9143",
+          "name": "Transition 09 - H",
+          "ratio": "h",
+          "type": "general"
+        },
+        {
+          "id": "d826b379-dd70-448c-8042-5ad2f72cc139",
+          "name": "Transition 10 - H",
+          "ratio": "h",
+          "type": "general"
+        },
+        {
+          "id": "d10191ad-3e2e-46bb-84be-44c50766ff30",
+          "name": "Transition 11 - H",
+          "ratio": "h",
+          "type": "general"
+        },
+        {
+          "id": "30ba4b46-8e11-4f90-9679-d3940b1db127",
+          "name": "Transition 12 - H",
+          "ratio": "h",
+          "type": "general"
+        },
+        {
+          "id": "fa57ba9e-93f5-4efd-b9e5-becf44044993",
+          "name": "Transition 13 - H",
+          "ratio": "h",
+          "type": "general"
+        },
+        {
+          "id": "c32ec9d5-d4a3-490c-9456-0d795de8f675",
+          "name": "Transition 14 - H",
+          "ratio": "h",
+          "type": "general"
+        },
+        {
+          "id": "3d67e833-afcd-4ee1-91b1-39e8ea3e7dd9",
+          "name": "Transition 15 - H",
+          "ratio": "h",
+          "type": "general"
+        },
+        {
+          "id": "fa0032b5-3ca5-4f27-b4c7-b43022cc2fce",
+          "name": "Transition 16 - H",
+          "ratio": "h",
+          "type": "general"
+        },
+        {
+          "id": "f51c9244-04cd-4c7a-940d-3a8af52daff5",
+          "name": "Transition 17 - H",
+          "ratio": "h",
+          "type": "general"
+        },
+        {
+          "id": "93efa41d-a84d-437a-97cf-2c535aa7440c",
+          "name": "Transition 18 - H",
+          "ratio": "h",
+          "type": "general"
+        },
+        {
+          "id": "8386c44b-3b20-4fc7-87db-0ca5a553edb5",
+          "name": "Transition 19 - H",
+          "ratio": "h",
+          "type": "general"
+        },
+        {
+          "id": "5e29c855-939e-4449-aeae-b7fc7433a051",
+          "name": "Transition 20 - H",
+          "ratio": "h",
+          "type": "general"
+        },
+        {
+          "id": "5a6f9000-5d76-4edc-a651-c24122a53709",
+          "name": "Transition 21 - H",
+          "ratio": "h",
+          "type": "general"
+        },
+        {
+          "id": "cdf93017-5600-4e18-ba4d-e9ded10b12d5",
+          "name": "Transition 22 - H",
+          "ratio": "h",
+          "type": "general"
+        },
+        {
+          "id": "871d492a-e040-4a79-9408-811c0c5c142d",
+          "name": "Transition 23 - H",
+          "ratio": "h",
+          "type": "general"
+        },
+        {
+          "id": "47d628d3-2a7a-4641-a47b-2b4929494073",
+          "name": "Transition 24 - H",
+          "ratio": "h",
+          "type": "general"
+        },
+        {
+          "id": "c36168db-bc1d-4a74-988d-7a79bbb48fcd",
+          "name": "Transition 25 - H",
+          "ratio": "h",
+          "type": "general"
+        }
+      ]
+    },
+    {
+      "id": "a6844f3f-d457-4fb2-9a16-404e7d330561",
+      "name": "Square",
+      "items": [
+        {
+          "id": "2cf97531-35e0-46be-91e8-42cc7693ba75",
+          "name": "Transition 01 - S",
+          "ratio": "s",
+          "type": "general"
+        },
+        {
+          "id": "4e331f84-02ca-44df-82c2-30e43081bb2a",
+          "name": "Transition 02 - S",
+          "ratio": "s",
+          "type": "general"
+        },
+        {
+          "id": "91f9c369-b805-4d58-94ba-aa338bf8e353",
+          "name": "Transition 03 - S",
+          "ratio": "s",
+          "type": "general"
+        },
+        {
+          "id": "b6c7ed02-ae67-4918-8bb8-806ee333e609",
+          "name": "Transition 04 - S",
+          "ratio": "s",
+          "type": "general"
+        },
+        {
+          "id": "a92d63ca-391f-43ca-9758-b95e72dda443",
+          "name": "Transition 05 - S",
+          "ratio": "s",
+          "type": "general"
+        },
+        {
+          "id": "3936b34a-5ce4-494d-be4f-5d3f4a7972ab",
+          "name": "Transition 06 - S",
+          "ratio": "s",
+          "type": "general"
+        },
+        {
+          "id": "f01616c7-63d7-46c8-b6d4-7292562737da",
+          "name": "Transition 07 - S",
+          "ratio": "s",
+          "type": "general"
+        },
+        {
+          "id": "8b33dfb3-a6d2-48a5-a02c-2aecbc64a71e",
+          "name": "Transition 08 - S",
+          "ratio": "s",
+          "type": "general"
+        },
+        {
+          "id": "bfd866a5-3a0c-4054-8009-884db13ca126",
+          "name": "Transition 09 - S",
+          "ratio": "s",
+          "type": "general"
+        },
+        {
+          "id": "7436a25a-b2dd-4bbf-a274-eb73994a6b52",
+          "name": "Transition 10 - S",
+          "ratio": "s",
+          "type": "general"
+        },
+        {
+          "id": "f2e295a4-2e1c-4f54-9695-ba47a98f6e3c",
+          "name": "Transition 11 - S",
+          "ratio": "s",
+          "type": "general"
+        },
+        {
+          "id": "5cda5463-eb4c-4e59-a54d-31d9157b13e3",
+          "name": "Transition 12 - S",
+          "ratio": "s",
+          "type": "general"
+        },
+        {
+          "id": "8a6d9335-3e9e-4c75-809c-01a4777700a4",
+          "name": "Transition 13 - S",
+          "ratio": "s",
+          "type": "general"
+        },
+        {
+          "id": "2a9cad65-1e81-4539-97ca-fe7bef62395f",
+          "name": "Transition 14 - S",
+          "ratio": "s",
+          "type": "general"
+        },
+        {
+          "id": "8c49c7bf-595b-415a-af2a-cacb4f218a95",
+          "name": "Transition 15 - S",
+          "ratio": "s",
+          "type": "general"
+        },
+        {
+          "id": "a4d8ccde-aae7-4ee7-bb3f-e70a33d48430",
+          "name": "Transition 16 - S",
+          "ratio": "s",
+          "type": "general"
+        },
+        {
+          "id": "b8cb1f87-bc0a-4963-83e3-19419195822a",
+          "name": "Transition 17 - S",
+          "ratio": "s",
+          "type": "general"
+        },
+        {
+          "id": "e0476324-0566-4b4a-a348-b24b70f7e0ab",
+          "name": "Transition 18 - S",
+          "ratio": "s",
+          "type": "general"
+        },
+        {
+          "id": "8eb59983-3ed8-45b8-90f1-ef73809239d4",
+          "name": "Transition 19 - S",
+          "ratio": "s",
+          "type": "general"
+        },
+        {
+          "id": "d1144f21-3f7b-4215-962f-0280090932ff",
+          "name": "Transition 20 - S",
+          "ratio": "s",
+          "type": "general"
+        },
+        {
+          "id": "b7081bb1-439e-4cce-9ff9-69a2e313589b",
+          "name": "Transition 21 - S",
+          "ratio": "s",
+          "type": "general"
+        },
+        {
+          "id": "ac6a43f2-2004-4d40-8f3a-12fd0aa67af9",
+          "name": "Transition 22 - S",
+          "ratio": "s",
+          "type": "general"
+        },
+        {
+          "id": "d96f15ef-0b38-46fe-b7fc-d80d30d06473",
+          "name": "Transition 23 - S",
+          "ratio": "s",
+          "type": "general"
+        },
+        {
+          "id": "b60a1471-7ce8-4fcb-a6f3-9fa95a38f7ed",
+          "name": "Transition 24 - S",
+          "ratio": "s",
+          "type": "general"
+        },
+        {
+          "id": "f58d584b-42f3-4371-aeb0-ce2751046c3f",
+          "name": "Transition 25 - S",
+          "ratio": "s",
+          "type": "general"
+        }
+      ]
+    },
+    {
+      "id": "834dac1c-c464-4d84-a31c-1de6063c58dc",
+      "name": "Vertical",
+      "items": [
+        {
+          "id": "614221a2-8603-40e4-beec-cdc72327c822",
+          "name": "Transition 01 - V",
+          "ratio": "v",
+          "type": "general"
+        },
+        {
+          "id": "3c9f74ee-41ae-45ea-90c6-274f72014973",
+          "name": "Transition 02 - V",
+          "ratio": "v",
+          "type": "general"
+        },
+        {
+          "id": "220dbb59-2730-4277-8f31-6847a07b65e9",
+          "name": "Transition 03 - V",
+          "ratio": "v",
+          "type": "general"
+        },
+        {
+          "id": "403afa5e-18a2-487f-a04e-78ed93afc3dd",
+          "name": "Transition 04 - V",
+          "ratio": "v",
+          "type": "general"
+        },
+        {
+          "id": "7bdfa0ce-ae5a-40c8-b929-7a75397f1f2c",
+          "name": "Transition 05 - V",
+          "ratio": "v",
+          "type": "general"
+        },
+        {
+          "id": "db700f5e-1d5f-4ab9-9301-56ca9d48efaf",
+          "name": "Transition 06 - V",
+          "ratio": "v",
+          "type": "general"
+        },
+        {
+          "id": "6ea39220-e199-4707-85d4-5a965a62b80a",
+          "name": "Transition 07 - V",
+          "ratio": "v",
+          "type": "general"
+        },
+        {
+          "id": "5c7d9179-98c5-438c-8c17-bced167380b8",
+          "name": "Transition 08 - V",
+          "ratio": "v",
+          "type": "general"
+        },
+        {
+          "id": "05d35de3-ed31-45e4-be27-6e9fc01b5a65",
+          "name": "Transition 09 - V",
+          "ratio": "v",
+          "type": "general"
+        },
+        {
+          "id": "6c6e037d-c6fc-41cb-8f70-0b7b89fa9600",
+          "name": "Transition 10 - V",
+          "ratio": "v",
+          "type": "general"
+        },
+        {
+          "id": "bb1cbaf5-c9b7-4e81-aca6-70081a337283",
+          "name": "Transition 11 - V",
+          "ratio": "v",
+          "type": "general"
+        },
+        {
+          "id": "0a76a07a-33fc-4e12-809f-085da45ffca4",
+          "name": "Transition 12 - V",
+          "ratio": "v",
+          "type": "general"
+        },
+        {
+          "id": "8480b9c7-cbac-4aea-b673-c11bb482bfbc",
+          "name": "Transition 13 - V",
+          "ratio": "v",
+          "type": "general"
+        },
+        {
+          "id": "3d296ab3-9ec3-470b-b672-deae394e180c",
+          "name": "Transition 14 - V",
+          "ratio": "v",
+          "type": "general"
+        },
+        {
+          "id": "4226f453-0d90-447e-adda-7dad91fde9ef",
+          "name": "Transition 15 - V",
+          "ratio": "v",
+          "type": "general"
+        },
+        {
+          "id": "42c581a9-1124-4d81-97e7-9ce17326bc79",
+          "name": "Transition 16 - V",
+          "ratio": "v",
+          "type": "general"
+        },
+        {
+          "id": "45bd6dc6-9ed1-4d62-859b-5d8c53a72772",
+          "name": "Transition 17 - V",
+          "ratio": "v",
+          "type": "general"
+        },
+        {
+          "id": "2979e98b-4e1b-40a9-9f9f-63e3b14da848",
+          "name": "Transition 18 - V",
+          "ratio": "v",
+          "type": "general"
+        },
+        {
+          "id": "17434096-acc4-487e-b106-7f51300c6af1",
+          "name": "Transition 19 - V",
+          "ratio": "v",
+          "type": "general"
+        },
+        {
+          "id": "4dcb36c3-ce14-4873-ad98-e244382f148c",
+          "name": "Transition 20 - V",
+          "ratio": "v",
+          "type": "general"
+        },
+        {
+          "id": "e5febadc-63e4-443c-83ca-8730eed435b0",
+          "name": "Transition 21 - V",
+          "ratio": "v",
+          "type": "general"
+        },
+        {
+          "id": "371260fb-d1a4-44fc-b7ea-22a1133b0b83",
+          "name": "Transition 22 - V",
+          "ratio": "v",
+          "type": "general"
+        },
+        {
+          "id": "791346d1-0472-4cba-944c-d88746b791a0",
+          "name": "Transition 23 - V",
+          "ratio": "v",
+          "type": "general"
+        },
+        {
+          "id": "597378bf-d775-4a7b-a638-43de332cc583",
+          "name": "Transition 24 - V",
+          "ratio": "v",
+          "type": "general"
+        },
+        {
+          "id": "8349374a-e396-4b99-aac0-0add0282325d",
+          "name": "Transition 25 - V",
+          "ratio": "v",
+          "type": "general"
+        }
+      ]
+    }
+  ]
+  

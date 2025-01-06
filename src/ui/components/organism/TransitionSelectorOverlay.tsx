@@ -8,6 +8,9 @@ import { useAtom } from "jotai";
 
 import data from "./../../../assets/svgData.json";
 import TransitionItem from "../molecuels/TransitionItem";
+import { Item } from "@adobe/react-spectrum";
+import { TabList, TabPanels } from "@adobe/react-spectrum";
+import { Tabs } from "@adobe/react-spectrum";
 const TransitionSelectorOverlay = () => {
   const [isOpen, setIsOpen] = useAtom(showTransitionSelectorOverlayAtom);
   const dialogRef = useRef(null);
@@ -24,6 +27,7 @@ const TransitionSelectorOverlay = () => {
     }
     setIsOpen({ open: false, index: -1 });
   };
+  let [tabId, setTabId] = React.useState(data[0].id);
 
   return (
     isOpen.open && (
@@ -41,20 +45,35 @@ const TransitionSelectorOverlay = () => {
           </div>
           <h3 className="text-[15px] font-bold ">Select Transition</h3>
           <div className="w-full overflow-auto flex-1">
-            <div className="grid grid-cols-2 gap-4">
-              {data[0].items.map((item) => {
-                return (
-                  <TransitionItem
-                    onClick={handleTransitionClick}
-                    onClose={handleClose}
-                    key={item.id}
-                    selected={false}
-                    category={data[0].name}
-                    template={item}
-                  />
-                );
-              })}
-            </div>
+            <Tabs
+              aria-label="History of Ancient Rome"
+              items={data}
+              // @ts-ignore
+              onSelectionChange={setTabId}
+            >
+              <TabList>{(item: any) => <Item>{item.name}</Item>}</TabList>
+              <TabPanels>
+                {(item: any) => (
+                  <Item>
+                    <div className="grid grid-cols-2 gap-4">
+                      {item.items.map((innerItem) => {
+                        return (
+                          <TransitionItem
+                            onClick={handleTransitionClick}
+                            onClose={handleClose}
+                            key={innerItem.id}
+                            selected={false}
+                            category={item.name}
+                            template={innerItem}
+                          />
+                        );
+                      })}
+                    </div>
+                  </Item>
+                )}
+              </TabPanels>
+            </Tabs>
+            
           </div>
         </div>
       </div>

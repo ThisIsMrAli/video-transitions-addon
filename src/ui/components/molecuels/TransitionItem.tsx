@@ -12,7 +12,7 @@ const TransitionItem = ({ selected, category, template, onClose, onClick }) => {
 
 
   const width = 100;
-  const height = template.ratio == "h" ? 56 : template.ratio == "s" ? 100 : 177;
+  const height = template.ratio == "h" ? 55 : template.ratio == "s" ? 100 : 175;
   useEffect(() => {
     setTimeout(() => {
       fetch(
