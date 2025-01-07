@@ -31,6 +31,7 @@ const FileInput = () => {
                 id: uuid(),
                 assetType: "media",
                 file: url,
+                orgFile: file,
                 type: file.type,
                 name: file.name,
                 start: 0,
