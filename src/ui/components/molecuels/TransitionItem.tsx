@@ -51,6 +51,7 @@ const TransitionItem = ({ selected, category, template, onClose, onClick }) => {
       id: uuid(),
       assetType: "transition",
       animationData: animationData,
+      item: template,
     });
     onClose();
   };

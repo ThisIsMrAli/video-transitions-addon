@@ -21,7 +21,7 @@ const TransitionBox = ({ item, setItem }) => {
   const [showContextMenu, setShowContextMenu] = useState(false);
   const contextRef = useRef(null);
   const width = 100;
-  const height = 100;
+  const height = item.item.ratio == "h" ? 55 : item.item.ratio == "s" ? 100 : 175;
   const [isOpen, setIsOpen] = useAtom(showTransitionSelectorOverlayAtom);
   const prevSelectedItemAnimationData = useRef();
   useEffect(() => {
