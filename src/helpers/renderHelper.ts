@@ -32,20 +32,15 @@ export const getVideoFps = async (videoUrl) => {
   }
 };
 
-export const mergeVideos = async (
-  video1,
-  video2,
-  onProgress
- ) => {
+export const mergeVideos = async (video1, video2, onProgress) => {
   try {
-    // Set up progress tracking
     ffmpeg.on("progress", ({ progress }) => {
       if (onProgress) {
         onProgress(progress);
       }
     });
 
-    // Write both input videos directly to FFmpeg's virtual filesystem
+    // Write input videos
     await ffmpeg.writeFile(
       "input1.mp4",
       new Uint8Array(await video1.arrayBuffer())
@@ -55,7 +50,7 @@ export const mergeVideos = async (
       new Uint8Array(await video2.arrayBuffer())
     );
 
-    // First, transcode both videos to ensure compatibility
+    // First, transcode both videos to ensure same frame rate and compatibility
     await ffmpeg.exec([
       "-i",
       "input1.mp4",
@@ -63,6 +58,8 @@ export const mergeVideos = async (
       "libx264",
       "-preset",
       "medium",
+      "-r",
+      "30", // Set output frame rate to 25fps
       "-c:a",
       "aac",
       "temp1.mp4",
@@ -75,6 +72,8 @@ export const mergeVideos = async (
       "libx264",
       "-preset",
       "medium",
+      "-r",
+      "30", // Set output frame rate to 25fps
       "-c:a",
       "aac",
       "temp2.mp4",
@@ -83,7 +82,7 @@ export const mergeVideos = async (
     // Create a file listing the transcoded videos
     await ffmpeg.writeFile("inputs.txt", "file 'temp1.mp4'\nfile 'temp2.mp4'");
 
-    // Concatenate the transcoded videos
+    // Concatenate the normalized videos
     await ffmpeg.exec([
       "-f",
       "concat",
@@ -96,17 +95,17 @@ export const mergeVideos = async (
       "output.mp4",
     ]);
 
-    // Read the output file and return as blob
+    // Read and return the result
     const data = await ffmpeg.readFile("output.mp4");
     const blob = new Blob([data], { type: "video/mp4" });
 
-    // Clean up all temporary files
+    // Clean up
     await ffmpeg.deleteFile("input1.mp4");
     await ffmpeg.deleteFile("input2.mp4");
-    await ffmpeg.deleteFile("temp1.mp4");
-    await ffmpeg.deleteFile("temp2.mp4");
     await ffmpeg.deleteFile("inputs.txt");
     await ffmpeg.deleteFile("output.mp4");
+    await ffmpeg.deleteFile("temp1.mp4");
+    await ffmpeg.deleteFile("temp2.mp4");
 
     return blob;
   } catch (error) {
