@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { layersAtom } from '../../../store/general';
 import { useAtom } from 'jotai';
-import { mergeVideos } from '../../../helpers/renderHelper';
+import {  mergeVideos } from '../../../helpers/renderHelper';
 import { downloadUint8ArrayAsMP4 } from '../../../helpers/utils';
 
 const Render = () => {

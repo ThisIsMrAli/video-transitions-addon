@@ -1,18 +1,21 @@
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile, toBlobURL } from "@ffmpeg/util";
-export const ffmpeg = new FFmpeg();
 
-const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm/";
-await ffmpeg.load({
-  coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
-  wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
-  //  coreURL: `./ffmpeg-core.js`,
-  // wasmURL: `./ffmpeg-core.wasm`,
-});
+// Create a function to get a new FFmpeg instance
+async function createFFmpegInstance() {
+  const ffmpeg = new FFmpeg();
+  const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm/";
+  await ffmpeg.load({
+    coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
+    wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
+  });
+  return ffmpeg;
+}
 
 export const getVideoFps = async (videoUrl) => {
   try {
     let fps = 30; // Default value
+    const ffmpeg = await createFFmpegInstance();
 
     ffmpeg.on("log", ({ message }) => {
       const fpsMatch = message.match(/(\d+(?:\.\d+)?) fps/);
@@ -25,6 +28,9 @@ export const getVideoFps = async (videoUrl) => {
     await ffmpeg.writeFile("input.mp4", videoFile);
     await ffmpeg.exec(["-i", "input.mp4", "-hide_banner"]);
 
+    // Clean up
+    await ffmpeg.terminate();
+
     return { fps };
   } catch (error) {
     console.error("Error getting video metadata:", error);
@@ -34,56 +40,93 @@ export const getVideoFps = async (videoUrl) => {
 
 export const mergeVideos = async (video1, video2, onProgress) => {
   try {
-    ffmpeg.on("progress", ({ progress }) => {
+    // Create two FFmpeg instances for parallel processing
+    const [ffmpeg1, ffmpeg2] = await Promise.all([
+      createFFmpegInstance(),
+      createFFmpegInstance(),
+    ]);
+
+    // Set up progress handlers for both instances
+    let progress1 = 0;
+    let progress2 = 0;
+
+    ffmpeg1.on("progress", ({ progress }) => {
+      progress1 = progress;
       if (onProgress) {
-        onProgress(progress);
+        onProgress((progress1 + progress2) / 2);
       }
     });
 
-    // Write input videos
-    await ffmpeg.writeFile(
-      "input1.mp4",
-      new Uint8Array(await video1.arrayBuffer())
-    );
-    await ffmpeg.writeFile(
-      "input2.mp4",
-      new Uint8Array(await video2.arrayBuffer())
-    );
+    ffmpeg2.on("progress", ({ progress }) => {
+      progress2 = progress;
+      if (onProgress) {
+        onProgress((progress1 + progress2) / 2);
+      }
+    });
 
-    // First, transcode both videos to ensure same frame rate and compatibility
-    await ffmpeg.exec([
-      "-i",
-      "input1.mp4",
-      "-c:v",
-      "libx264",
-      "-preset",
-      "medium",
-      "-r",
-      "30", // Set output frame rate to 25fps
-      "-c:a",
-      "aac",
-      "temp1.mp4",
+    // Process both videos concurrently
+    const [data1, data2] = await Promise.all([
+      // Process first video
+      (async () => {
+        await ffmpeg1.writeFile(
+          "input.mp4",
+          new Uint8Array(await video1.arrayBuffer())
+        );
+        await ffmpeg1.exec([
+          "-i",
+          "input.mp4",
+          "-c:v",
+          "libx264",
+          "-preset",
+          "medium",
+          "-r",
+          "30",
+          "-c:a",
+          "aac",
+          "output.mp4",
+        ]);
+        const data = await ffmpeg1.readFile("output.mp4");
+        await ffmpeg1.terminate();
+        return data;
+      })(),
+      // Process second video
+      (async () => {
+        await ffmpeg2.writeFile(
+          "input.mp4",
+          new Uint8Array(await video2.arrayBuffer())
+        );
+        await ffmpeg2.exec([
+          "-i",
+          "input.mp4",
+          "-c:v",
+          "libx264",
+          "-preset",
+          "medium",
+          "-r",
+          "30",
+          "-c:a",
+          "aac",
+          "output.mp4",
+        ]);
+        const data = await ffmpeg2.readFile("output.mp4");
+        await ffmpeg2.terminate();
+        return data;
+      })(),
     ]);
 
-    await ffmpeg.exec([
-      "-i",
-      "input2.mp4",
-      "-c:v",
-      "libx264",
-      "-preset",
-      "medium",
-      "-r",
-      "30", // Set output frame rate to 25fps
-      "-c:a",
-      "aac",
-      "temp2.mp4",
-    ]);
+    // Create final FFmpeg instance for merging
+    const ffmpegFinal = await createFFmpegInstance();
 
-    // Create a file listing the transcoded videos
-    await ffmpeg.writeFile("inputs.txt", "file 'temp1.mp4'\nfile 'temp2.mp4'");
+    // Write both processed videos
+    await ffmpegFinal.writeFile("temp1.mp4", data1);
+    await ffmpegFinal.writeFile("temp2.mp4", data2);
+    await ffmpegFinal.writeFile(
+      "inputs.txt",
+      "file 'temp1.mp4'\nfile 'temp2.mp4'"
+    );
 
-    // Concatenate the normalized videos
-    await ffmpeg.exec([
+    // Concatenate the videos
+    await ffmpegFinal.exec([
       "-f",
       "concat",
       "-safe",
@@ -95,17 +138,16 @@ export const mergeVideos = async (video1, video2, onProgress) => {
       "output.mp4",
     ]);
 
-    // Read and return the result
-    const data = await ffmpeg.readFile("output.mp4");
-    const blob = new Blob([data], { type: "video/mp4" });
+    // Read final result
+    const finalData = await ffmpegFinal.readFile("output.mp4");
+    const blob = new Blob([finalData], { type: "video/mp4" });
 
     // Clean up
-    await ffmpeg.deleteFile("input1.mp4");
-    await ffmpeg.deleteFile("input2.mp4");
-    await ffmpeg.deleteFile("inputs.txt");
-    await ffmpeg.deleteFile("output.mp4");
-    await ffmpeg.deleteFile("temp1.mp4");
-    await ffmpeg.deleteFile("temp2.mp4");
+    await ffmpegFinal.deleteFile("temp1.mp4");
+    await ffmpegFinal.deleteFile("temp2.mp4");
+    await ffmpegFinal.deleteFile("inputs.txt");
+    await ffmpegFinal.deleteFile("output.mp4");
+    await ffmpegFinal.terminate();
 
     return blob;
   } catch (error) {
