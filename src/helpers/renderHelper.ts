@@ -141,7 +141,7 @@ export const mergeVideos = async (video1, video2, onProgress) => {
 
     // Read final result
     const finalData = await ffmpegFinal.readFile("output.mp4");
-  //  const blob = new Blob([finalData], { type: "video/mp4" });
+    //  const blob = new Blob([finalData], { type: "video/mp4" });
 
     // Clean up
     await ffmpegFinal.deleteFile("temp1.mp4");
@@ -150,7 +150,7 @@ export const mergeVideos = async (video1, video2, onProgress) => {
     await ffmpegFinal.deleteFile("output.mp4");
     await ffmpegFinal.terminate();
 
-   return finalData;
+    return finalData;
   } catch (error) {
     console.error("Error merging videos:", error);
     throw error;
@@ -181,7 +181,7 @@ export async function convertLottieToPngSequenceAndBurn(
   videoMp4,
   onProgress,
   svgRef,
-  mergePoint=0
+  mergePoint = 0
 ) {
   const { fr: fps } = lottieData;
   const width = lottieData.w;
@@ -191,10 +191,7 @@ export async function convertLottieToPngSequenceAndBurn(
   const ffmpeg = await createFFmpegInstance();
 
   // Write input video
-  await ffmpeg.writeFile(
-    "input.mp4",
-    videoMp4
-  );
+  await ffmpeg.writeFile("input.mp4", videoMp4);
 
   // Generate Lottie frames
   const anim = Lottie.loadAnimation({
@@ -250,22 +247,22 @@ export async function convertLottieToPngSequenceAndBurn(
     });
   }
 
-  
-
-
   // Remove middlePoint calculation and simplify lottieStartTime
   const lottieStartTime = mergePoint; // Start at the beginning of video
 
   // Create complex filter for overlay
   const filterComplex = [
-    "[0:v][1:v]overlay=0:0:enable='between(t," +
-      lottieStartTime +
+    "[1:v]setpts=PTS-STARTPTS+(" +
+      mergePoint.toFixed(3) +
+      "/TB)[overlay];" +
+      "[0:v][overlay]overlay=0:0:enable='between(t," +
+      mergePoint.toFixed(3) +
       "," +
-      (lottieFrameCount / fps).toFixed(3) +
+      (lottieFrameCount / fps + mergePoint).toFixed(3) +
       ")'",
   ].join("");
   ffmpeg.on("progress", ({ progress }) => {
-   console.log(progress)
+    console.log(progress);
   });
 
   // Combine video with overlay
@@ -302,6 +299,3 @@ export async function convertLottieToPngSequenceAndBurn(
   onProgress(1); // Complete progress
   return new Blob([data], { type: "video/mp4" });
 }
-
-
-
