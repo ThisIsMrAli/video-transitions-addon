@@ -10,7 +10,7 @@ const Render = () => {
 
   useEffect(() => {
     console.log(layers);
-    convertLottieToPngSequence(layers[1].animationData, (progress) => {
+    convertLottieToPngSequence(layers[1].animationData,layers[0].orgFile, (progress) => {
       console.log(progress);
     }, svgRef).then((blob) => {
           console.log(blob);
