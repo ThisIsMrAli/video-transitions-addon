@@ -181,7 +181,13 @@ export async function convertLottieToPngSequence(
   onProgress,
   svgRef
 ) {
-  let { fr: fps } = lottieData;
+  const { fr: fps } = lottieData;
+  const width = lottieData.w;
+  const height = lottieData.h;
+
+  // Create FFmpeg instance early to start writing frames immediately
+  const ffmpeg = await createFFmpegInstance();
+
   const anim = Lottie.loadAnimation({
     container: svgRef.current,
     renderer: "svg",
@@ -191,64 +197,77 @@ export async function convertLottieToPngSequence(
     //@ts-ignore
     resizeMode: "center",
   });
-  const canvas = document.createElement("canvas");
-  const width = lottieData.w;
-  const height = lottieData.h;
-  //@ts-ignore
-  canvas.width = width;
-  //@ts-ignore
-  canvas.height = height;
-  //@ts-ignore
-  const ctx = canvas.getContext("2d", { willReadFrequently: true });
-  let duration = anim.getDuration(true);
-  const framesList = [];
-  await new Promise((resolve) => {
-    anim.addEventListener("DOMLoaded", resolve);
-  });
-  const currentFrame = 0;
-  const totalFrames = duration;
 
-  for (let i = 0; i < totalFrames; i++) {
+  await new Promise((resolve) => anim.addEventListener("DOMLoaded", resolve));
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+
+  const duration = anim.getDuration(true);
+  const serializer = new XMLSerializer();
+
+  // Process frames one at a time without storing them in memory
+  for (let i = 0; i < duration; i++) {
     await new Promise((resolve) => {
       anim.goToAndStop(i, true);
-      let img = new Image();
-      const serializer = new XMLSerializer();
 
-      let svgDoc = new DOMParser().parseFromString(
-        serializer.serializeToString(svgRef.current.querySelector("svg")),
-        "image/svg+xml"
-      );
-      const svgString = serializer.serializeToString(svgDoc.documentElement);
-      img.style.width = `${width}px`;
-      img.style.height = `${height}px`;
-      img.onload = function () {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        let desiredWidth = width; // Set your desired width
-        let desiredHeight = height; // Set your desired height
+      // Convert SVG to image
+      const svgElement = svgRef.current.querySelector("svg");
+      const svgString = serializer.serializeToString(svgElement);
+      const img = new Image();
 
-        ctx.drawImage(
-          img,
-          0,
-          0,
-          img.width,
-          img.height,
-          0,
-          0,
-          desiredWidth,
-          desiredHeight
+      img.onload = async () => {
+        ctx.clearRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Get frame data and write directly to FFmpeg
+        const blob = await new Promise((resolve) =>
+          canvas.toBlob(resolve, "image/png")
         );
-        const pngData = ctx.getImageData(0, 0, width, height, {
-          colorSpace: "srgb",
-        }).data;
-        framesList.push(pngData);
-        onProgress(i / totalFrames);
+        //@ts-ignore
+        const frameData = new Uint8Array(await blob.arrayBuffer());
+        await ffmpeg.writeFile(
+          `frame${i.toString().padStart(4, "0")}.png`,
+          frameData
+        );
+
+        onProgress(i / duration);
         resolve(true);
       };
 
-      img.src =
-        "data:image/svg+xml;base64," +
-        window.btoa(unescape(encodeURIComponent(svgString)));
+      img.src = `data:image/svg+xml;base64,${btoa(
+        unescape(encodeURIComponent(svgString))
+      )}`;
     });
   }
-  return framesList;
+
+  // Generate video from frames
+  await ffmpeg.exec([
+    "-framerate",
+    fps.toString(),
+    "-i",
+    "frame%04d.png",
+    "-c:v",
+    "libx264",
+    "-pix_fmt",
+    "yuv420p",
+    "-preset",
+    "medium", // Changed from 'medium' to 'ultrafast' for better speed
+    "-crf",
+    "23", // Balance between quality and file size
+    "output.mp4",
+  ]);
+
+  const data = await ffmpeg.readFile("output.mp4");
+
+  // Clean up
+  for (let i = 0; i < duration; i++) {
+    await ffmpeg.deleteFile(`frame${i.toString().padStart(4, "0")}.png`);
+  }
+  await ffmpeg.deleteFile("output.mp4");
+  await ffmpeg.terminate();
+
+  return new Blob([data], { type: "video/mp4" });
 }
