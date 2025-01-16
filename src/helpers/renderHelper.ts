@@ -1,5 +1,6 @@
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile, toBlobURL } from "@ffmpeg/util";
+import Lottie from "lottie-web";
 
 // Create a function to get a new FFmpeg instance
 async function createFFmpegInstance() {
@@ -173,4 +174,81 @@ export function downloadUint8ArrayAsMP4(uint8Array, filename) {
   // // Cleanup: Revoke the Object URL and remove the anchor element
   // window.URL.revokeObjectURL(url);
   // a.remove();
+}
+
+export async function convertLottieToPngSequence(
+  lottieData,
+  onProgress,
+  svgRef
+) {
+  let { fr: fps } = lottieData;
+  const anim = Lottie.loadAnimation({
+    container: svgRef.current,
+    renderer: "svg",
+    loop: false,
+    autoplay: false,
+    animationData: lottieData,
+    //@ts-ignore
+    resizeMode: "center",
+  });
+  const canvas = document.createElement("canvas");
+  const width = lottieData.w;
+  const height = lottieData.h;
+  //@ts-ignore
+  canvas.width = width;
+  //@ts-ignore
+  canvas.height = height;
+  //@ts-ignore
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  let duration = anim.getDuration(true);
+  const framesList = [];
+  await new Promise((resolve) => {
+    anim.addEventListener("DOMLoaded", resolve);
+  });
+  const currentFrame = 0;
+  const totalFrames = duration * fps;
+
+  for (let i = 0; i < totalFrames; i++) {
+    await new Promise((resolve) => {
+      anim.goToAndStop(i, true);
+      let img = new Image();
+      const serializer = new XMLSerializer();
+
+      let svgDoc = new DOMParser().parseFromString(
+        serializer.serializeToString(svgRef.current.querySelector("svg")),
+        "image/svg+xml"
+      );
+      const svgString = serializer.serializeToString(svgDoc.documentElement);
+      img.style.width = `${width}px`;
+      img.style.height = `${height}px`;
+      img.onload = function () {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let desiredWidth = width; // Set your desired width
+        let desiredHeight = height; // Set your desired height
+
+        ctx.drawImage(
+          img,
+          0,
+          0,
+          img.width,
+          img.height,
+          0,
+          0,
+          desiredWidth,
+          desiredHeight
+        );
+        const pngData = ctx.getImageData(0, 0, width, height, {
+          colorSpace: "srgb",
+        }).data;
+        framesList.push(pngData);
+        onProgress(i / totalFrames);
+        resolve(true);
+      };
+
+      img.src =
+        "data:image/svg+xml;base64," +
+        window.btoa(unescape(encodeURIComponent(svgString)));
+    });
+  }
+  console.log(framesList);
 }
