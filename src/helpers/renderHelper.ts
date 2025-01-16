@@ -141,7 +141,7 @@ export const mergeVideos = async (video1, video2, onProgress) => {
 
     // Read final result
     const finalData = await ffmpegFinal.readFile("output.mp4");
-    const blob = new Blob([finalData], { type: "video/mp4" });
+  //  const blob = new Blob([finalData], { type: "video/mp4" });
 
     // Clean up
     await ffmpegFinal.deleteFile("temp1.mp4");
@@ -150,7 +150,7 @@ export const mergeVideos = async (video1, video2, onProgress) => {
     await ffmpegFinal.deleteFile("output.mp4");
     await ffmpegFinal.terminate();
 
-    return blob;
+   return finalData;
   } catch (error) {
     console.error("Error merging videos:", error);
     throw error;
@@ -176,11 +176,12 @@ export function downloadUint8ArrayAsMP4(uint8Array, filename) {
   // a.remove();
 }
 
-export async function convertLottieToPngSequence(
+export async function convertLottieToPngSequenceAndBurn(
   lottieData,
   videoMp4,
   onProgress,
-  svgRef
+  svgRef,
+  mergePoint=0
 ) {
   const { fr: fps } = lottieData;
   const width = lottieData.w;
@@ -192,7 +193,7 @@ export async function convertLottieToPngSequence(
   // Write input video
   await ffmpeg.writeFile(
     "input.mp4",
-    new Uint8Array(await videoMp4.arrayBuffer())
+    videoMp4
   );
 
   // Generate Lottie frames
@@ -253,7 +254,7 @@ export async function convertLottieToPngSequence(
 
 
   // Remove middlePoint calculation and simplify lottieStartTime
-  const lottieStartTime = 0; // Start at the beginning of video
+  const lottieStartTime = mergePoint; // Start at the beginning of video
 
   // Create complex filter for overlay
   const filterComplex = [
@@ -301,3 +302,6 @@ export async function convertLottieToPngSequence(
   onProgress(1); // Complete progress
   return new Blob([data], { type: "video/mp4" });
 }
+
+
+
