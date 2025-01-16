@@ -206,7 +206,7 @@ export async function convertLottieToPngSequence(
     anim.addEventListener("DOMLoaded", resolve);
   });
   const currentFrame = 0;
-  const totalFrames = duration * fps;
+  const totalFrames = duration;
 
   for (let i = 0; i < totalFrames; i++) {
     await new Promise((resolve) => {
@@ -250,5 +250,5 @@ export async function convertLottieToPngSequence(
         window.btoa(unescape(encodeURIComponent(svgString)));
     });
   }
-  console.log(framesList);
+  return framesList;
 }
