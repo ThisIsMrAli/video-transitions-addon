@@ -212,34 +212,34 @@ export async function convertLottieToPngSequence(
   for (let i = 0; i < duration; i++) {
     await new Promise((resolve) => {
       anim.goToAndStop(i, true);
-
+      
       // Convert SVG to image
       const svgElement = svgRef.current.querySelector("svg");
       const svgString = serializer.serializeToString(svgElement);
       const img = new Image();
-
+      
       img.onload = async () => {
         ctx.clearRect(0, 0, width, height);
         ctx.drawImage(img, 0, 0, width, height);
-
-        // Get frame data and write directly to FFmpeg
-        const blob = await new Promise((resolve) =>
-          canvas.toBlob(resolve, "image/png")
-        );
-        //@ts-ignore
-        const frameData = new Uint8Array(await blob.arrayBuffer());
-        await ffmpeg.writeFile(
-          `frame${i.toString().padStart(4, "0")}.png`,
-          frameData
-        );
-
+        
+        // Get base64 data and remove the data URL prefix
+        const dataUrl = canvas.toDataURL("image/png");
+        const base64Data = dataUrl.split(',')[1];
+        // Convert base64 to binary data
+        const binaryData = atob(base64Data);
+        // Convert binary string to Uint8Array
+        const frameData = new Uint8Array(binaryData.length);
+        for (let i = 0; i < binaryData.length; i++) {
+          frameData[i] = binaryData.charCodeAt(i);
+        }
+        
+        await ffmpeg.writeFile(`frame${i.toString().padStart(4, "0")}.png`, frameData);
+        
         onProgress(i / duration);
         resolve(true);
       };
 
-      img.src = `data:image/svg+xml;base64,${btoa(
-        unescape(encodeURIComponent(svgString))
-      )}`;
+      img.src = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgString)))}`;
     });
   }
 
