@@ -17,7 +17,8 @@ const Render = () => {
     mergeVideos(layers[0].orgFile, layers[2].orgFile, (progress) => {
       console.log(progress);
     })
-      .then((data) => {
+      .then(({data, mergePoint}) => {
+        console.log('mergePoint', mergePoint);
         convertLottieToPngSequenceAndBurn(
           layers[1].animationData,
           data,

@@ -5,11 +5,19 @@ import Lottie from "lottie-web";
 // Create a function to get a new FFmpeg instance
 async function createFFmpegInstance() {
   const ffmpeg = new FFmpeg();
-  const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm/";
+
+  // Load FFmpeg in a new Worker
   await ffmpeg.load({
-    coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
-    wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
+    coreURL: await toBlobURL(
+      "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.js",
+      "text/javascript"
+    ),
+    wasmURL: await toBlobURL(
+      "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.wasm",
+      "application/wasm"
+    ),
   });
+
   return ffmpeg;
 }
 
@@ -47,6 +55,25 @@ export const mergeVideos = async (video1, video2, onProgress) => {
       createFFmpegInstance(),
     ]);
 
+    // Add duration tracking variable
+    let duration1 = 0;
+
+    // Add duration detection to ffmpeg1
+    ffmpeg1.on("log", ({ message }) => {
+      const durationMatch = message.match(
+        /Duration: (\d{2}):(\d{2}):(\d{2})\.(\d{2})/
+      );
+      if (durationMatch) {
+        const [, hours, minutes, seconds, centiseconds] = durationMatch;
+        duration1 =
+          parseFloat(hours) * 3600 +
+          parseFloat(minutes) * 60 +
+          parseFloat(seconds) +
+          parseFloat(centiseconds) / 100;
+        console.log("duration1", duration1);
+      }
+    });
+
     // Set up progress handlers for both instances
     let progress1 = 0;
     let progress2 = 0;
@@ -80,10 +107,14 @@ export const mergeVideos = async (video1, video2, onProgress) => {
           "libx264",
           "-preset",
           "ultrafast",
+          "-threads",
+          "0",
           "-r",
           "30",
           "-c:a",
           "aac",
+          "-movflags",
+          "+faststart",
           "output.mp4",
         ]);
         const data = await ffmpeg1.readFile("output.mp4");
@@ -103,10 +134,14 @@ export const mergeVideos = async (video1, video2, onProgress) => {
           "libx264",
           "-preset",
           "ultrafast",
+          "-threads",
+          "0",
           "-r",
           "30",
           "-c:a",
           "aac",
+          "-movflags",
+          "+faststart",
           "output.mp4",
         ]);
         const data = await ffmpeg2.readFile("output.mp4");
@@ -150,7 +185,7 @@ export const mergeVideos = async (video1, video2, onProgress) => {
     await ffmpegFinal.deleteFile("output.mp4");
     await ffmpegFinal.terminate();
 
-    return finalData;
+    return { data: finalData, mergePoint: duration1 };
   } catch (error) {
     console.error("Error merging videos:", error);
     throw error;
@@ -181,7 +216,7 @@ export async function convertLottieToPngSequenceAndBurn(
   videoMp4,
   onProgress,
   svgRef,
-  mergePoint = 0
+  mergePoint
 ) {
   const { fr: fps } = lottieData;
   const width = lottieData.w;
@@ -248,7 +283,6 @@ export async function convertLottieToPngSequenceAndBurn(
   }
 
   // Remove middlePoint calculation and simplify lottieStartTime
-  const lottieStartTime = mergePoint; // Start at the beginning of video
 
   // Create complex filter for overlay
   const filterComplex = [
@@ -281,8 +315,12 @@ export async function convertLottieToPngSequenceAndBurn(
     "yuv420p",
     "-preset",
     "ultrafast",
+    "-threads",
+    "0",
     "-crf",
     "23",
+    "-movflags",
+    "+faststart",
     "output.mp4",
   ]);
 
