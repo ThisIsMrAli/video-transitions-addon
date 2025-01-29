@@ -47,60 +47,57 @@ export const getVideoFps = async (videoUrl) => {
   }
 };
 
-export const mergeVideos = async (video1, video2, onProgress) => {
+export const mergeVideos = async (videos, onProgress) => {
   try {
-    // Create two FFmpeg instances for parallel processing
-    const [ffmpeg1, ffmpeg2] = await Promise.all([
-      createFFmpegInstance(),
-      createFFmpegInstance(),
-    ]);
+    // Create FFmpeg instances for each video
+    const ffmpegInstances = await Promise.all(
+      videos.map(() => createFFmpegInstance())
+    );
 
-    // Add duration tracking variable
-    let duration1 = 0;
-
-    // Add duration detection to ffmpeg1
-    ffmpeg1.on("log", ({ message }) => {
-      const durationMatch = message.match(
-        /Duration: (\d{2}):(\d{2}):(\d{2})\.(\d{2})/
-      );
-      if (durationMatch) {
-        const [, hours, minutes, seconds, centiseconds] = durationMatch;
-        duration1 =
-          parseFloat(hours) * 3600 +
-          parseFloat(minutes) * 60 +
-          parseFloat(seconds) +
-          parseFloat(centiseconds) / 100;
-        console.log("duration1", duration1);
-      }
-    });
-
-    // Set up progress handlers for both instances
-    let progress1 = 0;
-    let progress2 = 0;
-
-    ffmpeg1.on("progress", ({ progress }) => {
-      progress1 = progress;
-      if (onProgress) {
-        onProgress((progress1 + progress2) / 2);
-      }
-    });
-
-    ffmpeg2.on("progress", ({ progress }) => {
-      progress2 = progress;
-      if (onProgress) {
-        onProgress((progress1 + progress2) / 2);
-      }
-    });
-
-    // Process both videos concurrently
-    const [data1, data2] = await Promise.all([
-      // Process first video
-      (async () => {
-        await ffmpeg1.writeFile(
-          "input.mp4",
-          new Uint8Array(await video1.arrayBuffer())
+    // Track durations for each video
+    const durations = [];
+    
+    // Set up duration detection for each instance
+    ffmpegInstances.forEach((ffmpeg, index) => {
+      ffmpeg.on("log", ({ message }) => {
+        const durationMatch = message.match(
+          /Duration: (\d{2}):(\d{2}):(\d{2})\.(\d{2})/
         );
-        await ffmpeg1.exec([
+        if (durationMatch) {
+          const [, hours, minutes, seconds, centiseconds] = durationMatch;
+          durations[index] =
+            parseFloat(hours) * 3600 +
+            parseFloat(minutes) * 60 +
+            parseFloat(seconds) +
+            parseFloat(centiseconds) / 100;
+        }
+      });
+    });
+
+    // Track progress for each video
+    const progressArray = new Array(videos.length).fill(0);
+    
+    // Set up progress handlers for all instances
+    ffmpegInstances.forEach((ffmpeg, index) => {
+      ffmpeg.on("progress", ({ progress }) => {
+        progressArray[index] = progress;
+        if (onProgress) {
+          // Calculate average progress across all videos
+          const avgProgress = progressArray.reduce((a, b) => a + b) / progressArray.length;
+          onProgress(avgProgress);
+        }
+      });
+    });
+
+    // Process all videos concurrently
+    const processedData = await Promise.all(
+      videos.map(async (video, index) => {
+        const ffmpeg = ffmpegInstances[index];
+        await ffmpeg.writeFile(
+          "input.mp4",
+          new Uint8Array(await video.arrayBuffer())
+        );
+        await ffmpeg.exec([
           "-i",
           "input.mp4",
           "-c:v",
@@ -117,51 +114,26 @@ export const mergeVideos = async (video1, video2, onProgress) => {
           "+faststart",
           "output.mp4",
         ]);
-        const data = await ffmpeg1.readFile("output.mp4");
-        await ffmpeg1.terminate();
+        const data = await ffmpeg.readFile("output.mp4");
+        await ffmpeg.terminate();
         return data;
-      })(),
-      // Process second video
-      (async () => {
-        await ffmpeg2.writeFile(
-          "input.mp4",
-          new Uint8Array(await video2.arrayBuffer())
-        );
-        await ffmpeg2.exec([
-          "-i",
-          "input.mp4",
-          "-c:v",
-          "libx264",
-          "-preset",
-          "ultrafast",
-          "-threads",
-          "0",
-          "-r",
-          "30",
-          "-c:a",
-          "aac",
-          "-movflags",
-          "+faststart",
-          "output.mp4",
-        ]);
-        const data = await ffmpeg2.readFile("output.mp4");
-        await ffmpeg2.terminate();
-        return data;
-      })(),
-    ]);
+      })
+    );
 
     // Create final FFmpeg instance for merging
     const ffmpegFinal = await createFFmpegInstance();
 
-    // Write both processed videos
-    await ffmpegFinal.writeFile("temp1.mp4", data1);
-    await ffmpegFinal.writeFile("temp2.mp4", data2);
-    await ffmpegFinal.writeFile(
-      "inputs.txt",
-      "file 'temp1.mp4'\nfile 'temp2.mp4'"
-    );
+    // Write all processed videos and create inputs.txt
+    const inputsText = processedData
+      .map((_, index) => `file 'temp${index}.mp4'`)
+      .join("\n");
 
-    // Concatenate the videos
+    for (let i = 0; i < processedData.length; i++) {
+      await ffmpegFinal.writeFile(`temp${i}.mp4`, processedData[i]);
+    }
+    await ffmpegFinal.writeFile("inputs.txt", inputsText);
+
+    // Concatenate all videos
     await ffmpegFinal.exec([
       "-f",
       "concat",
@@ -176,16 +148,23 @@ export const mergeVideos = async (video1, video2, onProgress) => {
 
     // Read final result
     const finalData = await ffmpegFinal.readFile("output.mp4");
-    //  const blob = new Blob([finalData], { type: "video/mp4" });
 
     // Clean up
-    await ffmpegFinal.deleteFile("temp1.mp4");
-    await ffmpegFinal.deleteFile("temp2.mp4");
+    for (let i = 0; i < processedData.length; i++) {
+      await ffmpegFinal.deleteFile(`temp${i}.mp4`);
+    }
     await ffmpegFinal.deleteFile("inputs.txt");
     await ffmpegFinal.deleteFile("output.mp4");
     await ffmpegFinal.terminate();
 
-    return { data: finalData, mergePoint: duration1 };
+    // Calculate merge points (cumulative durations)
+    const mergePoints = durations.reduce((acc, duration) => {
+      const lastPoint = acc[acc.length - 1] || 0;
+      acc.push(lastPoint + duration);
+      return acc;
+    }, []);
+
+    return { data: finalData, mergePoints };
   } catch (error) {
     console.error("Error merging videos:", error);
     throw error;
@@ -272,7 +251,7 @@ export async function convertLottieToPngSequenceAndBurn(
           frameData
         );
 
-        onProgress((i / lottieFrameCount) * 0.5); // First 50% of progress
+       
         resolve(true);
       };
 
@@ -296,7 +275,8 @@ export async function convertLottieToPngSequenceAndBurn(
       ")'",
   ].join("");
   ffmpeg.on("progress", ({ progress }) => {
-    console.log(progress);
+    //  console.log(progress);
+    onProgress(progress);
   });
 
   // Combine video with overlay
