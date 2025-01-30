@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { layersAtom } from "../../../store/general";
+import { aspectRatioAtom, layersAtom } from "../../../store/general";
 import { useAtom } from "jotai";
 import {
   convertLottieToPngSequenceAndBurn,
@@ -11,6 +11,7 @@ const Render = () => {
   const [layers, setLayers] = useAtom(layersAtom);
   const svgRef = useRef(null);
   const [renderPercent, setRenderPercent] = useState(0);
+  const [selectedAspectRatio, setSelectedAspectRatio] = useAtom(aspectRatioAtom);
   useEffect(() => {
     console.log(renderPercent);
   }, [renderPercent]);
@@ -45,7 +46,9 @@ const Render = () => {
             setRenderPercent(50 + (progress / 2) * 100);
           },
           svgRef,
-          pointsToMerge
+          pointsToMerge,
+          selectedAspectRatio.width,
+          selectedAspectRatio.height
         )
           .then((blob) => {
             console.log(blob);

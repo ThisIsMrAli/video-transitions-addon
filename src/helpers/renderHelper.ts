@@ -196,7 +196,9 @@ export async function convertLottieToPngSequenceAndBurn(
   videoMp4,
   onProgress,
   svgRef,
-  mergePoints
+  mergePoints,
+  width,
+  height
 ) {
   // Validate input arrays
   if (lottieDataArray.length !== mergePoints.length) {
@@ -209,13 +211,35 @@ export async function convertLottieToPngSequenceAndBurn(
   const ffmpeg = await createFFmpegInstance();
   await ffmpeg.writeFile("input.mp4", videoMp4);
 
+  // Get video dimensions
+  let videoWidth, videoHeight;
+  ffmpeg.on("log", ({ message }) => {
+    const match = message.match(/Stream #0:0.*? (\d+)x(\d+)/);
+    if (match) {
+      videoWidth = parseInt(match[1]);
+      videoHeight = parseInt(match[2]);
+    }
+  });
+  await ffmpeg.exec(["-i", "input.mp4"]);
+
+  // Calculate scaling parameters for the video
+  const videoScaling = calculateScaling(videoWidth, videoHeight, width, height);
+
   // Process each Lottie animation
   let overlayCounter = 0;
   const frameInfos = [];
 
   for (let index = 0; index < lottieDataArray.length; index++) {
     const lottieData = lottieDataArray[index];
-    const { fr: fps, w: width, h: height } = lottieData;
+    const { fr: fps, w: lottieWidth, h: lottieHeight } = lottieData;
+
+    // Calculate scaling parameters for the Lottie animation
+    const lottieScaling = calculateScaling(
+      lottieWidth,
+      lottieHeight,
+      width,
+      height
+    );
 
     // Generate Lottie frames
     const anim = Lottie.loadAnimation({
@@ -229,8 +253,8 @@ export async function convertLottieToPngSequenceAndBurn(
     await new Promise((resolve) => anim.addEventListener("DOMLoaded", resolve));
 
     const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
+    canvas.width = width; // Use target width
+    canvas.height = height; // Use target height
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     const serializer = new XMLSerializer();
 
@@ -252,7 +276,14 @@ export async function convertLottieToPngSequenceAndBurn(
 
         img.onload = async () => {
           ctx.clearRect(0, 0, width, height);
-          ctx.drawImage(img, 0, 0, width, height);
+          // Draw the image centered with proper scaling
+          ctx.drawImage(
+            img,
+            lottieScaling.x,
+            lottieScaling.y,
+            lottieScaling.width,
+            lottieScaling.height
+          );
 
           const dataUrl = canvas.toDataURL("image/png");
           const base64Data = dataUrl.split(",")[1];
@@ -262,7 +293,6 @@ export async function convertLottieToPngSequenceAndBurn(
             frameData[j] = binaryData.charCodeAt(j);
           }
 
-          // Use animation index in filename
           await ffmpeg.writeFile(
             `overlay${index}_${i.toString().padStart(4, "0")}.png`,
             frameData
@@ -280,10 +310,22 @@ export async function convertLottieToPngSequenceAndBurn(
     anim.destroy();
   }
 
-  // Create complex filter for multiple overlays
+  // Create complex filter for multiple overlays with video scaling
   const filterParts = frameInfos.map((info, index) => {
     const mergePoint = mergePoints[index];
     const endPoint = mergePoint + info.frameCount / info.fps;
+    if (index === 0) {
+      // First part includes video scaling
+      return (
+        `[0:v]scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2[scaled];` +
+        `[${index + 1}:v]setpts=PTS-STARTPTS+(${mergePoint.toFixed(
+          3
+        )}/TB)[overlay${index}];` +
+        `[scaled][overlay${index}]overlay=0:0:enable='between(t,${mergePoint.toFixed(
+          3
+        )},${endPoint.toFixed(3)})'[tmp${index + 1}]`
+      );
+    }
     return (
       `[${index + 1}:v]setpts=PTS-STARTPTS+(${mergePoint.toFixed(
         3
@@ -294,8 +336,6 @@ export async function convertLottieToPngSequenceAndBurn(
     );
   });
 
-  // Modify first filter part to use input instead of tmp
-  filterParts[0] = filterParts[0].replace("[tmp0]", "[0:v]");
   const filterComplex = filterParts.join(";");
 
   // Set up progress handler
@@ -353,4 +393,33 @@ export async function convertLottieToPngSequenceAndBurn(
 
   onProgress(1);
   return new Blob([data], { type: "video/mp4" });
+}
+
+// Helper function to calculate scaling dimensions while maintaining aspect ratio
+function calculateScaling(
+  sourceWidth,
+  sourceHeight,
+  targetWidth,
+  targetHeight
+) {
+  const sourceRatio = sourceWidth / sourceHeight;
+  const targetRatio = targetWidth / targetHeight;
+
+  let width, height, x, y;
+
+  if (sourceRatio > targetRatio) {
+    // Source is wider than target
+    width = targetWidth;
+    height = targetWidth / sourceRatio;
+    x = 0;
+    y = (targetHeight - height) / 2;
+  } else {
+    // Source is taller than target
+    height = targetHeight;
+    width = targetHeight * sourceRatio;
+    x = (targetWidth - width) / 2;
+    y = 0;
+  }
+
+  return { width, height, x, y };
 }

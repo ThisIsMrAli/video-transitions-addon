@@ -73,7 +73,7 @@ const TransitionItem = ({ selected, category, template, onClose, onClick }) => {
             <Lottie
               loop
               play={hovering || true}
-              style={{ width: "100%" }}
+              style={{ width: "100%", backgroundColor: "black" }}
               animationData={animationData}
             />
           )}
