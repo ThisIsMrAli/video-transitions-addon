@@ -336,14 +336,18 @@ export async function convertLottieToPngSequenceAndBurn(
   // Update the FFmpeg filter complex to handle alpha channel correctly
   const filterParts = frameInfos.map((info, index) => {
     const mergePoint = mergePoints[index];
-    const endPoint = mergePoint + info.frameCount / info.fps;
-    console.log(
-      info,
-      frameInfos,
-      mergePoint,
-      endPoint,
-      (endPoint - mergePoint) * 30
-    );
+    const endPoint = mergePoints[index] + info.frameCount / info.fps;
+
+    // Add debug logging to verify timing calculations
+    console.log("Overlay timing:", {
+      animationIndex: index,
+      startTime: mergePoint,
+      endTime: endPoint,
+      frameCount: info.frameCount,
+      fps: info.fps,
+      durationInSeconds: info.frameCount / info.fps,
+    });
+
     if (index === 0) {
       // First part includes video scaling
       return (
@@ -356,6 +360,7 @@ export async function convertLottieToPngSequenceAndBurn(
         )},${endPoint.toFixed(3)})'[tmp${index + 1}]`
       );
     }
+
     return (
       `[${index + 1}:v]setpts=PTS-STARTPTS+(${mergePoint.toFixed(
         3
@@ -373,18 +378,18 @@ export async function convertLottieToPngSequenceAndBurn(
     onProgress(progress);
   });
 
-  // Prepare input arguments for ffmpeg
+  // Add input arguments with explicit duration for each overlay
   const inputArgs = ["-i", "input.mp4"];
   frameInfos.forEach((info, index) => {
     inputArgs.push(
       "-framerate",
       info.fps.toString(),
       "-i",
-      `overlay${index}_%04d.png` // Use animation index in input pattern
+      `overlay${index}_%04d.png`
     );
   });
 
-  // Combine video with overlays
+  // Combine video with overlays, ensuring proper frame handling
   await ffmpeg.exec([
     ...inputArgs,
     "-filter_complex",
