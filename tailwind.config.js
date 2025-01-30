@@ -7,7 +7,7 @@ module.exports = {
         expressText: "#222222",
         expressBorder: "#d5d5d5",
         expressbg: "#e6e6e6",
-        exporessbgLighter: "#f8f8f8",
+        expressbgLighter: "#f8f8f8",
         expressbgDarker: "#808080",
         expressbgDark: "#1d1d1d",
 

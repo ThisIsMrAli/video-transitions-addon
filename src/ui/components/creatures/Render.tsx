@@ -17,21 +17,35 @@ const Render = () => {
 
   useEffect(() => {
     console.log(layers);
+    const VideoLayers = layers
+      .filter((layer) => layer.assetType === "media")
+      .map((layer) => layer.orgFile);
+    const TransitionLayers = layers
+      .filter((layer) => layer.assetType == "transition")
+      .map((layer) => layer.animationData);
     console.log(layers[0].end, layers[0].end.toFixed(3));
-    mergeVideos(layers.filter((layer) => layer.assetType === "media").map((layer) => layer.orgFile), (progress) => {
+    mergeVideos(VideoLayers, (progress) => {
       setRenderPercent((progress / 2) * 100);
     })
       .then(({ data, mergePoints }) => {
-        console.log("mergePoint", mergePoints);
         const markerTime = layers[1].animationData.markers[0].tm * (1 / 30);
+        const pointsToMerge = [];
+        for (let i = 0; i < mergePoints.length - 1; i++) {
+          if (mergePoints[i] > markerTime) {
+            pointsToMerge.push(
+              mergePoints[i] - TransitionLayers[i].markers[0].tm * (1 / 30)
+            );
+          }
+        }
+
         convertLottieToPngSequenceAndBurn(
-          layers[1].animationData,
+          TransitionLayers,
           data,
           (progress) => {
             setRenderPercent(50 + (progress / 2) * 100);
           },
           svgRef,
-          mergePoints[0] - markerTime
+          pointsToMerge
         )
           .then((blob) => {
             console.log(blob);

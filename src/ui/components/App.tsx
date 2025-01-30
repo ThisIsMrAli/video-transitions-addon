@@ -16,6 +16,7 @@ import Home from "./creatures/Home";
 import { useAtom } from "jotai";
 import { selectFileDialogAtom } from "../../store/general";
 import Render from "./creatures/Render";
+import AspectRationSelect from "./creatures/AspectRationSelect";
 
 const App = ({
   addOnUISdk,
@@ -58,10 +59,14 @@ const App = ({
         </div>
       ),
       children: [
-        { index: true, element: <Navigate to="/home" replace /> },
+        { index: true, element: <Navigate to="/aspect-ratio" replace /> },
         {
           path: "/home",
           element: <Home />,
+        },
+        {
+          path: "/aspect-ratio",
+          element: <AspectRationSelect />,
         },
         {
           path: "/render",

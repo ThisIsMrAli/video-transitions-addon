@@ -9,14 +9,27 @@ import TransitionSelectorOverlay from "../organism/TransitionSelectorOverlay";
 import TransitionItem from "../molecuels/TransitionItem";
 import TransitionBox from "../molecuels/TransitionBox";
 import { cloneDeep } from "lodash";
-import { Button } from "@adobe/react-spectrum";
+import { ActionButton, Button } from "@adobe/react-spectrum";
 import { useNavigate } from "react-router-dom";
+import BackIcon from "@spectrum-icons/workflow/ChevronLeft";
 
 const Home = () => {
   const navigate = useNavigate();
   const [layers, setLayers] = useAtom(layersAtom);
+  
   return (
-    <div className="w-full h-full flex flex-col items-center space-y-4 ">
+    <div className="w-full h-full flex flex-col items-center space-y-4 relative">
+      <span className="text-black font-[900] flex w-full text-left justify-start items-center text-[18px] mb-2 ml-[12px]">
+        <ActionButton
+          onPress={() => navigate("/")}
+          isQuiet
+          aria-label="Icon only"
+          UNSAFE_className="mr-[2px] cursor-pointer"
+        >
+          <BackIcon />
+        </ActionButton>
+        Stage
+      </span>
       <TransitionSelectorOverlay />
       <ViewerBox />
       <div className="flex-1 w-full overflow-auto">

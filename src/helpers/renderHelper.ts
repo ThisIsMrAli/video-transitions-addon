@@ -56,7 +56,7 @@ export const mergeVideos = async (videos, onProgress) => {
 
     // Track durations for each video
     const durations = [];
-    
+
     // Set up duration detection for each instance
     ffmpegInstances.forEach((ffmpeg, index) => {
       ffmpeg.on("log", ({ message }) => {
@@ -76,14 +76,15 @@ export const mergeVideos = async (videos, onProgress) => {
 
     // Track progress for each video
     const progressArray = new Array(videos.length).fill(0);
-    
+
     // Set up progress handlers for all instances
     ffmpegInstances.forEach((ffmpeg, index) => {
       ffmpeg.on("progress", ({ progress }) => {
         progressArray[index] = progress;
         if (onProgress) {
           // Calculate average progress across all videos
-          const avgProgress = progressArray.reduce((a, b) => a + b) / progressArray.length;
+          const avgProgress =
+            progressArray.reduce((a, b) => a + b) / progressArray.length;
           onProgress(avgProgress);
         }
       });
@@ -191,104 +192,135 @@ export function downloadUint8ArrayAsMP4(uint8Array, filename) {
 }
 
 export async function convertLottieToPngSequenceAndBurn(
-  lottieData,
+  lottieDataArray,
   videoMp4,
   onProgress,
   svgRef,
-  mergePoint
+  mergePoints
 ) {
-  const { fr: fps } = lottieData;
-  const width = lottieData.w;
-  const height = lottieData.h;
+  // Validate input arrays
+  if (lottieDataArray.length !== mergePoints.length) {
+    throw new Error(
+      "Number of Lottie animations must match number of merge points"
+    );
+  }
 
   // Create FFmpeg instance
   const ffmpeg = await createFFmpegInstance();
-
-  // Write input video
   await ffmpeg.writeFile("input.mp4", videoMp4);
 
-  // Generate Lottie frames
-  const anim = Lottie.loadAnimation({
-    container: svgRef.current,
-    renderer: "svg",
-    loop: false,
-    autoplay: false,
-    animationData: lottieData,
-  });
+  // Process each Lottie animation
+  let overlayCounter = 0;
+  const frameInfos = [];
 
-  await new Promise((resolve) => anim.addEventListener("DOMLoaded", resolve));
+  for (let index = 0; index < lottieDataArray.length; index++) {
+    const lottieData = lottieDataArray[index];
+    const { fr: fps, w: width, h: height } = lottieData;
 
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d", { willReadFrequently: true });
-
-  const lottieFrameCount = anim.getDuration(true);
-  const serializer = new XMLSerializer();
-
-  // Generate Lottie PNG sequence with transparency
-  for (let i = 0; i < lottieFrameCount; i++) {
-    await new Promise((resolve) => {
-      anim.goToAndStop(i, true);
-      const svgElement = svgRef.current.querySelector("svg");
-      const svgString = serializer.serializeToString(svgElement);
-      const img = new Image();
-
-      img.onload = async () => {
-        ctx.clearRect(0, 0, width, height);
-        ctx.drawImage(img, 0, 0, width, height);
-
-        const dataUrl = canvas.toDataURL("image/png");
-        const base64Data = dataUrl.split(",")[1];
-        const binaryData = atob(base64Data);
-        const frameData = new Uint8Array(binaryData.length);
-        for (let j = 0; j < binaryData.length; j++) {
-          frameData[j] = binaryData.charCodeAt(j);
-        }
-
-        await ffmpeg.writeFile(
-          `overlay${i.toString().padStart(4, "0")}.png`,
-          frameData
-        );
-
-       
-        resolve(true);
-      };
-
-      img.src = `data:image/svg+xml;base64,${btoa(
-        unescape(encodeURIComponent(svgString))
-      )}`;
+    // Generate Lottie frames
+    const anim = Lottie.loadAnimation({
+      container: svgRef.current,
+      renderer: "svg",
+      loop: false,
+      autoplay: false,
+      animationData: lottieData,
     });
+
+    await new Promise((resolve) => anim.addEventListener("DOMLoaded", resolve));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    const serializer = new XMLSerializer();
+
+    const lottieFrameCount = anim.getDuration(true);
+    const startFrame = overlayCounter;
+    frameInfos.push({
+      startFrame,
+      frameCount: lottieFrameCount,
+      fps: fps,
+    });
+
+    // Generate PNG sequence for current animation
+    for (let i = 0; i < lottieFrameCount; i++) {
+      await new Promise((resolve) => {
+        anim.goToAndStop(i, true);
+        const svgElement = svgRef.current.querySelector("svg");
+        const svgString = serializer.serializeToString(svgElement);
+        const img = new Image();
+
+        img.onload = async () => {
+          ctx.clearRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const dataUrl = canvas.toDataURL("image/png");
+          const base64Data = dataUrl.split(",")[1];
+          const binaryData = atob(base64Data);
+          const frameData = new Uint8Array(binaryData.length);
+          for (let j = 0; j < binaryData.length; j++) {
+            frameData[j] = binaryData.charCodeAt(j);
+          }
+
+          // Use animation index in filename
+          await ffmpeg.writeFile(
+            `overlay${index}_${i.toString().padStart(4, "0")}.png`,
+            frameData
+          );
+          overlayCounter++;
+          resolve(true);
+        };
+
+        img.src = `data:image/svg+xml;base64,${btoa(
+          unescape(encodeURIComponent(svgString))
+        )}`;
+      });
+    }
+
+    anim.destroy();
   }
 
-  // Remove middlePoint calculation and simplify lottieStartTime
+  // Create complex filter for multiple overlays
+  const filterParts = frameInfos.map((info, index) => {
+    const mergePoint = mergePoints[index];
+    const endPoint = mergePoint + info.frameCount / info.fps;
+    return (
+      `[${index + 1}:v]setpts=PTS-STARTPTS+(${mergePoint.toFixed(
+        3
+      )}/TB)[overlay${index}];` +
+      `[tmp${index}][overlay${index}]overlay=0:0:enable='between(t,${mergePoint.toFixed(
+        3
+      )},${endPoint.toFixed(3)})'[tmp${index + 1}]`
+    );
+  });
 
-  // Create complex filter for overlay
-  const filterComplex = [
-    "[1:v]setpts=PTS-STARTPTS+(" +
-      mergePoint.toFixed(3) +
-      "/TB)[overlay];" +
-      "[0:v][overlay]overlay=0:0:enable='between(t," +
-      mergePoint.toFixed(3) +
-      "," +
-      (lottieFrameCount / fps + mergePoint).toFixed(3) +
-      ")'",
-  ].join("");
+  // Modify first filter part to use input instead of tmp
+  filterParts[0] = filterParts[0].replace("[tmp0]", "[0:v]");
+  const filterComplex = filterParts.join(";");
+
+  // Set up progress handler
   ffmpeg.on("progress", ({ progress }) => {
-    //  console.log(progress);
     onProgress(progress);
   });
 
-  // Combine video with overlay
+  // Prepare input arguments for ffmpeg
+  const inputArgs = ["-i", "input.mp4"];
+  frameInfos.forEach((info, index) => {
+    inputArgs.push(
+      "-framerate",
+      info.fps.toString(),
+      "-i",
+      `overlay${index}_%04d.png` // Use animation index in input pattern
+    );
+  });
+
+  // Combine video with overlays
   await ffmpeg.exec([
-    "-i",
-    "input.mp4",
-    "-framerate",
-    fps.toString(),
-    "-i",
-    "overlay%04d.png",
+    ...inputArgs,
     "-filter_complex",
     filterComplex,
+    "-map",
+    `[tmp${frameInfos.length}]`,
     "-c:v",
     "libx264",
     "-pix_fmt",
@@ -306,14 +338,19 @@ export async function convertLottieToPngSequenceAndBurn(
 
   const data = await ffmpeg.readFile("output.mp4");
 
-  // Clean up
-  for (let i = 0; i < lottieFrameCount; i++) {
-    await ffmpeg.deleteFile(`overlay${i.toString().padStart(4, "0")}.png`);
+  // Clean up - modified to handle multiple animation sequences
+  for (let animIndex = 0; animIndex < lottieDataArray.length; animIndex++) {
+    const frameCount = frameInfos[animIndex].frameCount;
+    for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {
+      await ffmpeg.deleteFile(
+        `overlay${animIndex}_${frameIndex.toString().padStart(4, "0")}.png`
+      );
+    }
   }
   await ffmpeg.deleteFile("input.mp4");
   await ffmpeg.deleteFile("output.mp4");
   await ffmpeg.terminate();
 
-  onProgress(1); // Complete progress
+  onProgress(1);
   return new Blob([data], { type: "video/mp4" });
 }

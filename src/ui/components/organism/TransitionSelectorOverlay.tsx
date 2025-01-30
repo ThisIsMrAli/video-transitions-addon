@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
 import { MdOutlineClose } from "react-icons/md";
 import {
+  aspectRatioAtom,
   layersAtom,
   showTransitionSelectorOverlayAtom,
 } from "../../../store/general";
@@ -15,6 +16,8 @@ const TransitionSelectorOverlay = () => {
   const [isOpen, setIsOpen] = useAtom(showTransitionSelectorOverlayAtom);
   const dialogRef = useRef(null);
   const [layers, setLayers] = useAtom(layersAtom);
+  const [selectedAspectRatio] = useAtom(aspectRatioAtom);   
+  const category = data.find((cat) => cat.name == selectedAspectRatio.name);
   const handleClose = () => {
     setIsOpen({ open: false, index: -1 });
   };
@@ -27,7 +30,7 @@ const TransitionSelectorOverlay = () => {
     }
     setIsOpen({ open: false, index: -1 });
   };
-  let [tabId, setTabId] = React.useState(data[0].id);
+
 
   return (
     isOpen.open && (
@@ -45,35 +48,20 @@ const TransitionSelectorOverlay = () => {
           </div>
           <h3 className="text-[15px] font-bold ">Select Transition</h3>
           <div className="w-full overflow-auto flex-1">
-            <Tabs
-              aria-label="History of Ancient Rome"
-              items={data}
-              // @ts-ignore
-              onSelectionChange={setTabId}
-            >
-              <TabList>{(item: any) => <Item>{item.name}</Item>}</TabList>
-              <TabPanels>
-                {(item: any) => (
-                  <Item>
-                    <div className="grid grid-cols-2 gap-4">
-                      {item.items.map((innerItem) => {
-                        return (
-                          <TransitionItem
-                            onClick={handleTransitionClick}
-                            onClose={handleClose}
-                            key={innerItem.id}
-                            selected={false}
-                            category={item.name}
-                            template={innerItem}
-                          />
-                        );
-                      })}
-                    </div>
-                  </Item>
-                )}
-              </TabPanels>
-            </Tabs>
-            
+            <div className="grid grid-cols-2 gap-4">
+              {category.items.map((innerItem) => {
+                return (
+                  <TransitionItem
+                    onClick={handleTransitionClick}
+                    onClose={handleClose}
+                    key={innerItem.id}
+                    selected={false}
+                    category={category.name}
+                    template={innerItem}
+                  />
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
