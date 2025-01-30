@@ -253,9 +253,12 @@ export async function convertLottieToPngSequenceAndBurn(
     await new Promise((resolve) => anim.addEventListener("DOMLoaded", resolve));
 
     const canvas = document.createElement("canvas");
-    canvas.width = width;  // Use target width
-    canvas.height = height;  // Use target height
-    const ctx = canvas.getContext("2d", { willReadFrequently: true, alpha: true }); // Enable alpha channel
+    canvas.width = width; // Use target width
+    canvas.height = height; // Use target height
+    const ctx = canvas.getContext("2d", {
+      willReadFrequently: true,
+      alpha: true,
+    }); // Enable alpha channel
     const serializer = new XMLSerializer();
 
     const lottieFrameCount = anim.getDuration(true);
@@ -277,10 +280,10 @@ export async function convertLottieToPngSequenceAndBurn(
         img.onload = async () => {
           // Clear with transparent background
           ctx.clearRect(0, 0, width, height);
-          
+
           // Set composite operation to maintain transparency
-          ctx.globalCompositeOperation = 'source-over';
-          
+          ctx.globalCompositeOperation = "source-over";
+
           // Draw the image centered with proper scaling
           ctx.drawImage(
             img,
@@ -307,9 +310,23 @@ export async function convertLottieToPngSequenceAndBurn(
           resolve(true);
         };
 
-        img.src = `data:image/svg+xml;base64,${btoa(
+        // Log the SVG and image data with frame information
+        console.group(
+          `Animation ${index} - Frame ${i}/${lottieFrameCount - 1}`
+        );
+        console.log("SVG String:", svgString);
+        const imageUrl = `data:image/svg+xml;base64,${btoa(
           unescape(encodeURIComponent(svgString))
         )}`;
+        console.log("Image URL:", imageUrl);
+        console.log("Frame Details:", {
+          animationIndex: index,
+          currentFrame: i,
+          totalFrames: lottieFrameCount,
+          fps: fps,
+        });
+        console.groupEnd();
+        img.src = imageUrl;
       });
     }
 
@@ -320,6 +337,13 @@ export async function convertLottieToPngSequenceAndBurn(
   const filterParts = frameInfos.map((info, index) => {
     const mergePoint = mergePoints[index];
     const endPoint = mergePoint + info.frameCount / info.fps;
+    console.log(
+      info,
+      frameInfos,
+      mergePoint,
+      endPoint,
+      (endPoint - mergePoint) * 30
+    );
     if (index === 0) {
       // First part includes video scaling
       return (
