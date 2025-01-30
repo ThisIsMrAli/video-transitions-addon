@@ -253,9 +253,9 @@ export async function convertLottieToPngSequenceAndBurn(
     await new Promise((resolve) => anim.addEventListener("DOMLoaded", resolve));
 
     const canvas = document.createElement("canvas");
-    canvas.width = width; // Use target width
-    canvas.height = height; // Use target height
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    canvas.width = width;  // Use target width
+    canvas.height = height;  // Use target height
+    const ctx = canvas.getContext("2d", { willReadFrequently: true, alpha: true }); // Enable alpha channel
     const serializer = new XMLSerializer();
 
     const lottieFrameCount = anim.getDuration(true);
@@ -275,7 +275,12 @@ export async function convertLottieToPngSequenceAndBurn(
         const img = new Image();
 
         img.onload = async () => {
+          // Clear with transparent background
           ctx.clearRect(0, 0, width, height);
+          
+          // Set composite operation to maintain transparency
+          ctx.globalCompositeOperation = 'source-over';
+          
           // Draw the image centered with proper scaling
           ctx.drawImage(
             img,
@@ -285,6 +290,7 @@ export async function convertLottieToPngSequenceAndBurn(
             lottieScaling.height
           );
 
+          // Use PNG format with alpha channel
           const dataUrl = canvas.toDataURL("image/png");
           const base64Data = dataUrl.split(",")[1];
           const binaryData = atob(base64Data);
@@ -310,7 +316,7 @@ export async function convertLottieToPngSequenceAndBurn(
     anim.destroy();
   }
 
-  // Create complex filter for multiple overlays with video scaling
+  // Update the FFmpeg filter complex to handle alpha channel correctly
   const filterParts = frameInfos.map((info, index) => {
     const mergePoint = mergePoints[index];
     const endPoint = mergePoint + info.frameCount / info.fps;
@@ -321,7 +327,7 @@ export async function convertLottieToPngSequenceAndBurn(
         `[${index + 1}:v]setpts=PTS-STARTPTS+(${mergePoint.toFixed(
           3
         )}/TB)[overlay${index}];` +
-        `[scaled][overlay${index}]overlay=0:0:enable='between(t,${mergePoint.toFixed(
+        `[scaled][overlay${index}]overlay=0:0:format=auto:enable='between(t,${mergePoint.toFixed(
           3
         )},${endPoint.toFixed(3)})'[tmp${index + 1}]`
       );
@@ -330,7 +336,7 @@ export async function convertLottieToPngSequenceAndBurn(
       `[${index + 1}:v]setpts=PTS-STARTPTS+(${mergePoint.toFixed(
         3
       )}/TB)[overlay${index}];` +
-      `[tmp${index}][overlay${index}]overlay=0:0:enable='between(t,${mergePoint.toFixed(
+      `[tmp${index}][overlay${index}]overlay=0:0:format=auto:enable='between(t,${mergePoint.toFixed(
         3
       )},${endPoint.toFixed(3)})'[tmp${index + 1}]`
     );
