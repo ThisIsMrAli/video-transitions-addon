@@ -21,7 +21,12 @@ const Render = () => {
     console.log(layers);
     const VideoLayers = layers
       .filter((layer) => layer.assetType === "media")
-      .map((layer) => layer.orgFile);
+      .map((layer) => ({
+        orgFile: layer.orgFile,
+        changedTrims: layer.changedTrims,
+        start: layer.start,
+        end: layer.end,
+      }));
     const TransitionLayers = layers
       .filter((layer) => layer.assetType == "transition")
       .map((layer) => layer.animationData);

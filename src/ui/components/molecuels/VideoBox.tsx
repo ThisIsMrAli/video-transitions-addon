@@ -58,7 +58,8 @@ const VideoBox = ({ item }) => {
         if (layer.id === item.id) {
           return {
             ...layer,
-            start: Math.min(newTime, trimEnd)
+            start: Math.min(newTime, trimEnd),
+            changedTrims:true
           };
         }
         return layer;
@@ -72,7 +73,8 @@ const VideoBox = ({ item }) => {
         if (layer.id === item.id) {
           return {
             ...layer,
-            end: Math.max(newTime, trimStart)
+            end: Math.max(newTime, trimStart),
+            changedTrims:true
           };
         }
         return layer;
@@ -150,10 +152,13 @@ const VideoBox = ({ item }) => {
                   id: uuid(),
                   assetType: "media",
                   file: url,
+                  orgFile: file,
                   type: file.type,
                   name: file.name,
+                  changedTrims:false,
                   start: 0,
                   end: video.duration,
+
                 };
               }
               return layer;
