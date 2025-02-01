@@ -6,16 +6,21 @@ import {
   mergeVideos,
 } from "../../../helpers/renderHelper";
 import { downloadUint8ArrayAsMP4 } from "../../../helpers/utils";
+import { Button } from "@adobe/react-spectrum";
+import { ProgressBar } from "@adobe/react-spectrum";
 
 const Render = () => {
   const [layers, setLayers] = useAtom(layersAtom);
-  const svgRef = useRef(null);
+
   const [renderPercent, setRenderPercent] = useState(0);
   const [selectedAspectRatio, setSelectedAspectRatio] =
     useAtom(aspectRatioAtom);
   useEffect(() => {
     console.log(renderPercent);
   }, [renderPercent]);
+  const onClose = () => {
+    setRenderPercent(0);
+  };
 
   useEffect(() => {
     console.log(layers);
@@ -73,11 +78,40 @@ const Render = () => {
       });
   }, []);
   return (
-    <div>
-      <div
-        className="w-[130px] z-0 overflow-hidden rounded-[4px]"
-        ref={svgRef}
-      ></div>
+    <div className="flex justify-center items-center ">
+      <div className="w-full rounded-[8px] bg-white flex flex-col py-[20px] items-center px-[20px] relative space-y-5">
+        <h4 className="text-center font-bold text-[16px] text-[#545554] mb-[15px] leading-[15px]">
+          Render in Progress...
+        </h4>
+
+        <ProgressBar
+          size="L"
+          label={
+            renderPercent <= 50
+              ? "Combining videos..."
+              : "Adding transitions..."
+          }
+          minValue={0}
+          maxValue={100}
+          value={renderPercent}
+          // isIndeterminate={renderStep === steps.FINALIZING}
+        />
+        <span className="text-center">
+          Please wait until the render is complete...
+        </span>
+        <span className="text-center text-[12px]">
+          Once rendering is complete, the video will be added to your document.
+        </span>
+
+        <Button
+          onPress={onClose}
+          style="fill"
+          variant="secondary"
+          alignSelf={"center"}
+        >
+          Cancel
+        </Button>
+      </div>
     </div>
   );
 };

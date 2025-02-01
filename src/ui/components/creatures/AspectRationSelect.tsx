@@ -13,7 +13,7 @@ const AspectRationSelect = () => {
     navigate("/home");
   };
   return (
-    <div className="h-full w-full flex items-center justify-center flex-col p-4 gap-6">
+    <div className="h-full w-full flex items-center justify-start flex-col p-4 gap-6">
       <h3 className="text-base font-bold">Select Aspect Ratio</h3>
       <div className="flex items-center justify-center flex-col bg-expressbgLighter gap-4 py-6 rounded-[20px] w-full">
         <span className="text-xs text-expressText">
