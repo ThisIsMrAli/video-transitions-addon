@@ -56,7 +56,6 @@ const Render = () => {
           (progress) => {
             setRenderPercent(50 + (progress / 2) * 100);
           },
-          svgRef,
           pointsToMerge,
           selectedAspectRatio.width,
           selectedAspectRatio.height
