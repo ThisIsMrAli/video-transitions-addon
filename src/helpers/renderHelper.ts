@@ -174,24 +174,6 @@ export const mergeVideos = async (videos, onProgress, width, height) => {
   }
 };
 
-export function downloadUint8ArrayAsMP4(uint8Array, filename) {
-  // Step 1: Convert Uint8Array to Blob
-  const blob = new Blob([uint8Array], { type: "video/mp4" });
-
-  // Step 2: Create a URL for the Blob
-  const url = URL.createObjectURL(blob);
-
-  // Step 3: Create an Anchor Element and Trigger Download
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename || "download.mp4";
-  document.body.appendChild(a);
-  a.click();
-
-  // // Cleanup: Revoke the Object URL and remove the anchor element
-  // window.URL.revokeObjectURL(url);
-  // a.remove();
-}
 
 export async function convertLottieToPngSequenceAndBurn(
   lottieDataArray,
@@ -459,4 +441,24 @@ function calculateScaling(
   }
 
   return { width, height, x, y };
+}
+
+
+export function downloadUint8ArrayAsMP4(uint8Array, filename) {
+  // Step 1: Convert Uint8Array to Blob
+  const blob = new Blob([uint8Array], { type: "video/mp4" });
+
+  // Step 2: Create a URL for the Blob
+  const url = URL.createObjectURL(blob);
+
+  // Step 3: Create an Anchor Element and Trigger Download
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename || "download.mp4";
+  document.body.appendChild(a);
+  a.click();
+
+  // // Cleanup: Revoke the Object URL and remove the anchor element
+  // window.URL.revokeObjectURL(url);
+  // a.remove();
 }
