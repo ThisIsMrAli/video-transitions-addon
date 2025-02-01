@@ -47,11 +47,10 @@ export const getVideoFps = async (videoUrl) => {
   }
 };
 
-export const mergeVideos = async (videos, onProgress, width, height) => {
+export const mergeVideos = async (videoInputs, onProgress, width, height) => {
   try {
-    // Create FFmpeg instances for each video
     const ffmpegInstances = await Promise.all(
-      videos.map(() => createFFmpegInstance())
+      videoInputs.map(() => createFFmpegInstance())
     );
 
     // Track durations for each video
@@ -75,14 +74,13 @@ export const mergeVideos = async (videos, onProgress, width, height) => {
     });
 
     // Track progress for each video
-    const progressArray = new Array(videos.length).fill(0);
+    const progressArray = new Array(videoInputs.length).fill(0);
 
     // Set up progress handlers for all instances
     ffmpegInstances.forEach((ffmpeg, index) => {
       ffmpeg.on("progress", ({ progress }) => {
         progressArray[index] = progress;
         if (onProgress) {
-          // Calculate average progress across all videos
           const avgProgress =
             progressArray.reduce((a, b) => a + b) / progressArray.length;
           onProgress(avgProgress);
@@ -92,15 +90,30 @@ export const mergeVideos = async (videos, onProgress, width, height) => {
 
     // Process all videos concurrently
     const processedData = await Promise.all(
-      videos.map(async (video, index) => {
+      videoInputs.map(async (videoInput, index) => {
         const ffmpeg = ffmpegInstances[index];
         await ffmpeg.writeFile(
           "input.mp4",
-          new Uint8Array(await video.arrayBuffer())
+          new Uint8Array(await videoInput.orgFile.arrayBuffer())
         );
-        await ffmpeg.exec([
-          "-i",
-          "input.mp4",
+
+        const ffmpegArgs = ["-i", "input.mp4"];
+
+        // Add trim arguments if changedTrims is true and start/end are provided
+        if (
+          videoInput.changedTrims &&
+          videoInput.start !== undefined &&
+          videoInput.end !== undefined
+        ) {
+          ffmpegArgs.push(
+            "-ss",
+            videoInput.start.toString(),
+            "-t",
+            (videoInput.end - videoInput.start).toString()
+          );
+        }
+
+        ffmpegArgs.push(
           "-vf",
           `scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2`,
           "-c:v",
@@ -115,8 +128,10 @@ export const mergeVideos = async (videos, onProgress, width, height) => {
           "aac",
           "-movflags",
           "+faststart",
-          "output.mp4",
-        ]);
+          "output.mp4"
+        );
+
+        await ffmpeg.exec(ffmpegArgs);
         const data = await ffmpeg.readFile("output.mp4");
         await ffmpeg.terminate();
         return data;
@@ -161,9 +176,18 @@ export const mergeVideos = async (videos, onProgress, width, height) => {
     await ffmpegFinal.terminate();
 
     // Calculate merge points (cumulative durations)
-    const mergePoints = durations.reduce((acc, duration) => {
+    const mergePoints = durations.reduce((acc, duration, index) => {
       const lastPoint = acc[acc.length - 1] || 0;
-      acc.push(lastPoint + duration);
+      // If video is trimmed, use the trimmed duration instead
+      let videoDuration = duration;
+      if (
+        videoInputs[index].changedTrims &&
+        videoInputs[index].start !== undefined &&
+        videoInputs[index].end !== undefined
+      ) {
+        videoDuration = videoInputs[index].end - videoInputs[index].start;
+      }
+      acc.push(lastPoint + videoDuration);
       return acc;
     }, []);
 
@@ -173,7 +197,6 @@ export const mergeVideos = async (videos, onProgress, width, height) => {
     throw error;
   }
 };
-
 
 export async function convertLottieToPngSequenceAndBurn(
   lottieDataArray,
@@ -442,7 +465,6 @@ function calculateScaling(
 
   return { width, height, x, y };
 }
-
 
 export function downloadUint8ArrayAsMP4(uint8Array, filename) {
   // Step 1: Convert Uint8Array to Blob
