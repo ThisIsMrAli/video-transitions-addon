@@ -11,7 +11,8 @@ const Render = () => {
   const [layers, setLayers] = useAtom(layersAtom);
   const svgRef = useRef(null);
   const [renderPercent, setRenderPercent] = useState(0);
-  const [selectedAspectRatio, setSelectedAspectRatio] = useAtom(aspectRatioAtom);
+  const [selectedAspectRatio, setSelectedAspectRatio] =
+    useAtom(aspectRatioAtom);
   useEffect(() => {
     console.log(renderPercent);
   }, [renderPercent]);
@@ -25,9 +26,14 @@ const Render = () => {
       .filter((layer) => layer.assetType == "transition")
       .map((layer) => layer.animationData);
     console.log(layers[0].end, layers[0].end.toFixed(3));
-    mergeVideos(VideoLayers, (progress) => {
-      setRenderPercent((progress / 2) * 100);
-    })
+    mergeVideos(
+      VideoLayers,
+      (progress) => {
+        setRenderPercent((progress / 2) * 100);
+      },
+      selectedAspectRatio.width,
+      selectedAspectRatio.height
+    )
       .then(({ data, mergePoints }) => {
         const markerTime = layers[1].animationData.markers[0].tm * (1 / 30);
         const pointsToMerge = [];

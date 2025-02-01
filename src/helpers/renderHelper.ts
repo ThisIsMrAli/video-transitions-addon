@@ -47,7 +47,7 @@ export const getVideoFps = async (videoUrl) => {
   }
 };
 
-export const mergeVideos = async (videos, onProgress) => {
+export const mergeVideos = async (videos, onProgress, width, height) => {
   try {
     // Create FFmpeg instances for each video
     const ffmpegInstances = await Promise.all(
@@ -101,6 +101,8 @@ export const mergeVideos = async (videos, onProgress) => {
         await ffmpeg.exec([
           "-i",
           "input.mp4",
+          "-vf",
+          `scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2`,
           "-c:v",
           "libx264",
           "-preset",
