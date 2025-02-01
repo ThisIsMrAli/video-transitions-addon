@@ -195,7 +195,22 @@ export async function convertLottieToPngSequenceAndBurn(
   const ffmpeg = await createFFmpegInstance();
   await ffmpeg.writeFile("input.mp4", videoMp4);
 
+  // Get video dimensions
+  let videoWidth, videoHeight;
+  ffmpeg.on("log", ({ message }) => {
+    const match = message.match(/Stream #0:0.*? (\d+)x(\d+)/);
+    if (match) {
+      videoWidth = parseInt(match[1]);
+      videoHeight = parseInt(match[2]);
+    }
+  });
+  await ffmpeg.exec(["-i", "input.mp4"]);
+
+  // Calculate scaling parameters for the video
+  const videoScaling = calculateScaling(videoWidth, videoHeight, width, height);
+
   // Process each Lottie animation
+  let overlayCounter = 0;
   const frameInfos = [];
 
   for (let index = 0; index < lottieDataArray.length; index++) {
@@ -210,26 +225,7 @@ export async function convertLottieToPngSequenceAndBurn(
       height
     );
 
-    // Create canvas for WebM recording
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d", {
-      willReadFrequently: true,
-      alpha: true,
-    });
-
-    // Set up MediaRecorder for WebM
-    const stream = canvas.captureStream(fps);
-    const mediaRecorder = new MediaRecorder(stream, {
-      mimeType: "video/webm;codecs=vp8",
-      videoBitsPerSecond: 8000000, // Adjust as needed
-    });
-
-    const chunks = [];
-    mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-
-    // Generate Lottie animation
+    // Generate Lottie frames
     const anim = Lottie.loadAnimation({
       container: svgRef.current,
       renderer: "svg",
@@ -240,70 +236,110 @@ export async function convertLottieToPngSequenceAndBurn(
 
     await new Promise((resolve) => anim.addEventListener("DOMLoaded", resolve));
 
+    const canvas = document.createElement("canvas");
+    canvas.width = width; // Use target width
+    canvas.height = height; // Use target height
+    const ctx = canvas.getContext("2d", {
+      willReadFrequently: true,
+      alpha: true,
+    }); // Enable alpha channel
     const serializer = new XMLSerializer();
-    const frameCount = anim.totalFrames;
 
+    const lottieFrameCount = anim.getDuration(true);
+    const startFrame = overlayCounter;
     frameInfos.push({
-      frameCount,
+      startFrame,
+      frameCount: lottieFrameCount,
       fps: fps,
     });
 
-    // Start recording
-    mediaRecorder.start();
-
-    // Render each frame
-    for (let i = 0; i < frameCount; i++) {
+    // Generate PNG sequence for current animation
+    for (let i = 0; i < lottieFrameCount; i++) {
       await new Promise((resolve) => {
         anim.goToAndStop(i, true);
-        requestAnimationFrame(async () => {
-          const svgElement = svgRef.current.querySelector("svg");
-          const svgString = serializer.serializeToString(svgElement);
-          const img = new Image();
+        const svgElement = svgRef.current.querySelector("svg");
+        const svgString = serializer.serializeToString(svgElement);
+        const img = new Image();
 
-          img.onload = () => {
-            ctx.clearRect(0, 0, width, height);
-            ctx.drawImage(
-              img,
-              lottieScaling.x,
-              lottieScaling.y,
-              lottieScaling.width,
-              lottieScaling.height
-            );
-            resolve(true);
-          };
+        img.onload = async () => {
+          // Clear with transparent background
+          ctx.clearRect(0, 0, width, height);
 
-          const imageUrl = `data:image/svg+xml;base64,${btoa(
-            unescape(encodeURIComponent(svgString))
-          )}`;
-          img.src = imageUrl;
+          // Set composite operation to maintain transparency
+          ctx.globalCompositeOperation = "source-over";
+
+          // Draw the image centered with proper scaling
+          ctx.drawImage(
+            img,
+            lottieScaling.x,
+            lottieScaling.y,
+            lottieScaling.width,
+            lottieScaling.height
+          );
+
+          // Use PNG format with alpha channel
+          const dataUrl = canvas.toDataURL("image/png");
+          const base64Data = dataUrl.split(",")[1];
+          const binaryData = atob(base64Data);
+          const frameData = new Uint8Array(binaryData.length);
+          for (let j = 0; j < binaryData.length; j++) {
+            frameData[j] = binaryData.charCodeAt(j);
+          }
+
+          await ffmpeg.writeFile(
+            `overlay${index}_${i.toString().padStart(4, "0")}.png`,
+            frameData
+          );
+          overlayCounter++;
+          resolve(true);
+        };
+
+        // Log the SVG and image data with frame information
+        console.group(
+          `Animation ${index} - Frame ${i}/${lottieFrameCount - 1}`
+        );
+        console.log("SVG String:", svgString);
+        const imageUrl = `data:image/svg+xml;base64,${btoa(
+          unescape(encodeURIComponent(svgString))
+        )}`;
+        console.log("Image URL:", imageUrl);
+        console.log("Frame Details:", {
+          animationIndex: index,
+          currentFrame: i,
+          totalFrames: lottieFrameCount,
+          fps: fps,
         });
+        console.groupEnd();
+        img.src = imageUrl;
       });
     }
-
-    // Stop recording and wait for data
-    mediaRecorder.stop();
-    await new Promise((resolve) => (mediaRecorder.onstop = resolve));
-
-    // Convert chunks to buffer and write to FFmpeg
-    const webmBlob = new Blob(chunks, { type: "video/webm" });
-    const webmBuffer = await webmBlob.arrayBuffer();
-    await ffmpeg.writeFile(`overlay${index}.webm`, new Uint8Array(webmBuffer));
 
     anim.destroy();
   }
 
-  // Update the FFmpeg filter complex for WebM overlays
+  // Update the FFmpeg filter complex to handle alpha channel correctly
   const filterParts = frameInfos.map((info, index) => {
     const mergePoint = mergePoints[index];
     const endPoint = mergePoints[index] + info.frameCount / info.fps;
 
+    // Add debug logging to verify timing calculations
+    console.log("Overlay timing:", {
+      animationIndex: index,
+      startTime: mergePoint,
+      endTime: endPoint,
+      frameCount: info.frameCount,
+      fps: info.fps,
+      durationInSeconds: info.frameCount / info.fps,
+    });
+
     if (index === 0) {
+      // First part includes video scaling
       return (
         `[0:v]scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2[scaled];` +
         `[${index + 1}:v]setpts=PTS-STARTPTS+(${mergePoint.toFixed(
           3
         )}/TB)[overlay${index}];` +
-        `[scaled][overlay${index}]overlay=0:0:enable='between(t,${mergePoint.toFixed(
+        `[scaled][overlay${index}]overlay=0:0:format=auto:enable='between(t,${mergePoint.toFixed(
           3
         )},${endPoint.toFixed(3)})'[tmp${index + 1}]`
       );
@@ -313,7 +349,7 @@ export async function convertLottieToPngSequenceAndBurn(
       `[${index + 1}:v]setpts=PTS-STARTPTS+(${mergePoint.toFixed(
         3
       )}/TB)[overlay${index}];` +
-      `[tmp${index}][overlay${index}]overlay=0:0:enable='between(t,${mergePoint.toFixed(
+      `[tmp${index}][overlay${index}]overlay=0:0:format=auto:enable='between(t,${mergePoint.toFixed(
         3
       )},${endPoint.toFixed(3)})'[tmp${index + 1}]`
     );
@@ -326,13 +362,18 @@ export async function convertLottieToPngSequenceAndBurn(
     onProgress(progress);
   });
 
-  // Add input arguments for WebM files
+  // Add input arguments with explicit duration for each overlay
   const inputArgs = ["-i", "input.mp4"];
-  frameInfos.forEach((_, index) => {
-    inputArgs.push("-i", `overlay${index}.webm`);
+  frameInfos.forEach((info, index) => {
+    inputArgs.push(
+      "-framerate",
+      info.fps.toString(),
+      "-i",
+      `overlay${index}_%04d.png`
+    );
   });
 
-  // Combine video with overlays
+  // Combine video with overlays, ensuring proper frame handling
   await ffmpeg.exec([
     ...inputArgs,
     "-filter_complex",
@@ -356,9 +397,14 @@ export async function convertLottieToPngSequenceAndBurn(
 
   const data = await ffmpeg.readFile("output.mp4");
 
-  // Clean up
-  for (let i = 0; i < lottieDataArray.length; i++) {
-    await ffmpeg.deleteFile(`overlay${i}.webm`);
+  // Clean up - modified to handle multiple animation sequences
+  for (let animIndex = 0; animIndex < lottieDataArray.length; animIndex++) {
+    const frameCount = frameInfos[animIndex].frameCount;
+    for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {
+      await ffmpeg.deleteFile(
+        `overlay${animIndex}_${frameIndex.toString().padStart(4, "0")}.png`
+      );
+    }
   }
   await ffmpeg.deleteFile("input.mp4");
   await ffmpeg.deleteFile("output.mp4");
