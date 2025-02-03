@@ -102,7 +102,22 @@ export const mergeVideos = async (
     // Set up progress handlers for all instances
     ffmpegInstances.forEach((ffmpeg, index) => {
       ffmpeg.on("progress", ({ progress }) => {
-        progressArray[index] = progress;
+        // Calculate the effective progress based on trimmed duration
+        let effectiveProgress = progress;
+        if (
+          videoInputs[index].changedTrims &&
+          videoInputs[index].start !== undefined &&
+          videoInputs[index].end !== undefined
+        ) {
+          const fullDuration = durations[index] || 0;
+          const trimmedDuration =
+            videoInputs[index].end - videoInputs[index].start;
+          // Adjust progress based on trim duration ratio
+          effectiveProgress = (progress * fullDuration) / trimmedDuration;
+          // Cap progress at 100%
+          effectiveProgress = Math.min(effectiveProgress, 1);
+        }
+        progressArray[index] = effectiveProgress;
         if (onProgress) {
           const avgProgress =
             progressArray.reduce((a, b) => a + b) / progressArray.length;
@@ -120,7 +135,7 @@ export const mergeVideos = async (
           new Uint8Array(await videoInput.orgFile.arrayBuffer())
         );
 
-        const ffmpegArgs = ["-i", "input.mp4"];
+        const ffmpegArgs = [];
 
         // Add trim arguments if changedTrims is true and start/end are provided
         if (
@@ -128,12 +143,19 @@ export const mergeVideos = async (
           videoInput.start !== undefined &&
           videoInput.end !== undefined
         ) {
-          ffmpegArgs.push(
-            "-ss",
-            videoInput.start.toString(),
-            "-t",
-            (videoInput.end - videoInput.start).toString()
-          );
+          // Put -ss before input for faster seeking
+          ffmpegArgs.push("-ss", videoInput.start.toString());
+        }
+
+        ffmpegArgs.push("-i", "input.mp4");
+
+        // Add duration limit after input
+        if (
+          videoInput.changedTrims &&
+          videoInput.start !== undefined &&
+          videoInput.end !== undefined
+        ) {
+          ffmpegArgs.push("-t", (videoInput.end - videoInput.start).toString());
         }
 
         ffmpegArgs.push(
