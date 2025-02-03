@@ -56,7 +56,7 @@ const TransitionOverlay = ({
       ref={lottieContainerRef}
       className="absolute inset-0 pointer-events-none"
       style={{
-        zIndex: 10,
+        zIndex: 9999,
         position: "absolute",
         top: 0,
         left: 0,
