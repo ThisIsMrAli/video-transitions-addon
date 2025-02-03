@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { aspectRatioAtom, layersAtom } from "../../../store/general";
 import { useAtom } from "jotai";
+import TransitionOverlay from "../molecules/TransitionOverlay";
 
 const ViewerBox = () => {
   const [layers] = useAtom(layersAtom);
@@ -16,6 +17,41 @@ const ViewerBox = () => {
   const isSeekingRef = useRef(false);
   const activeVideoIndexRef = useRef(0);
   const blobUrlsRef = useRef<Map<number, string>>(new Map());
+
+  const getCurrentTime = () => {
+    const activeIndex = activeVideoIndexRef.current;
+    const previousDuration = layers
+      .filter((layer) => layer.assetType === "media")
+      .slice(0, activeIndex)
+      .reduce((total, _, index) => total + getVideoDuration(index), 0);
+
+    const currentVideo = videoRefs.current[activeIndex];
+    const currentLayer = layers.filter((layer) => layer.assetType === "media")[
+      activeIndex
+    ];
+
+    if (currentLayer?.changedTrims) {
+      const videoCurrentTime = currentVideo?.currentTime || 0;
+      const trimStart = currentLayer.start || 0;
+      return previousDuration + (videoCurrentTime - trimStart);
+    }
+
+    return previousDuration + (currentVideo?.currentTime || 0);
+  };
+
+  const getVideoDuration = (index) => {
+    const layer = layers.filter((layer) => layer.assetType === "media")[index];
+    if (layer?.changedTrims && layer.end != null && layer.start != null) {
+      return layer.end - layer.start;
+    }
+    return videoRefs.current[index]?.duration || 0;
+  };
+
+  const getTotalDuration = () => {
+    return layers
+      .filter((layer) => layer.assetType === "media")
+      .reduce((total, _, index) => total + getVideoDuration(index), 0);
+  };
 
   useEffect(() => {
     const videoLayers = layers.filter((layer) => layer.assetType === "media");
@@ -52,42 +88,9 @@ const ViewerBox = () => {
     blobUrlsRef.current.clear();
 
     // Utility functions
-    const getVideoDuration = (index: number) => {
-      const layer = videoLayers[index];
-      if (layer.changedTrims && layer.end != null && layer.start != null) {
-        return layer.end - layer.start;
-      }
-      return videoRefs.current[index]?.duration || 0;
-    };
-
     const getVideoStartTime = (index: number) => {
       const layer = videoLayers[index];
       return layer.changedTrims ? layer.start || 0 : 0;
-    };
-
-    const getTotalDuration = () => {
-      return videoLayers.reduce(
-        (total, _, index) => total + getVideoDuration(index),
-        0
-      );
-    };
-
-    const getCurrentTime = () => {
-      const activeIndex = activeVideoIndexRef.current;
-      const previousDuration = videoLayers
-        .slice(0, activeIndex)
-        .reduce((total, _, index) => total + getVideoDuration(index), 0);
-
-      const currentVideo = videoRefs.current[activeIndex];
-      const currentLayer = videoLayers[activeIndex];
-
-      if (currentLayer.changedTrims) {
-        const videoCurrentTime = currentVideo?.currentTime || 0;
-        const trimStart = currentLayer.start || 0;
-        return previousDuration + (videoCurrentTime - trimStart);
-      }
-
-      return previousDuration + (currentVideo?.currentTime || 0);
     };
 
     // Video creation and setup
@@ -144,7 +147,7 @@ const ViewerBox = () => {
       try {
         await video.play();
       } catch (err) {
-       // console.log("Playback failed:", err);
+        // console.log("Playback failed:", err);
       }
     };
 
@@ -206,7 +209,9 @@ const ViewerBox = () => {
       if (isSeekingRef.current) return;
 
       const currentVideo = videoRefs.current[activeVideoIndexRef.current];
-      const currentLayer = videoLayers[activeVideoIndexRef.current];
+      const currentLayer = layers.filter(
+        (layer) => layer.assetType === "media"
+      )[activeVideoIndexRef.current];
       if (!currentVideo) return;
 
       const videoDuration = getVideoDuration(activeVideoIndexRef.current);
@@ -267,7 +272,17 @@ const ViewerBox = () => {
           paddingTop: `${(aspectRatio.height / aspectRatio.width) * 100}%`,
         }}
       >
-        <div ref={containerRef} className="absolute inset-0" />
+        <div className="absolute inset-0 z-10 bg-transparent">
+         
+          <TransitionOverlay
+            layers={layers}
+            currentTime={getCurrentTime()}
+            totalDuration={getTotalDuration()}
+            activeVideoIndex={activeVideoIndexRef.current}
+            getVideoDuration={getVideoDuration}
+          />
+        </div>
+        <div ref={containerRef} className="absolute inset-0 z-0" />
       </div>
 
       <div className="relative h-8 px-4 bg-gray-900">
