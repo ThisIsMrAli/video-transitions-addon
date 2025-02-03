@@ -8,43 +8,47 @@ import {
 import { downloadUint8ArrayAsMP4 } from "../../../helpers/utils";
 import { Button } from "@adobe/react-spectrum";
 import { ProgressBar } from "@adobe/react-spectrum";
+import { useNavigate } from "react-router-dom";
+import { ToastQueue } from "@react-spectrum/toast";
+import AddOnSdkInstance from "../../../helpers/AddonSdk";
 
 const Render = () => {
   const [layers, setLayers] = useAtom(layersAtom);
-
+  const navigate = useNavigate();
   const [renderPercent, setRenderPercent] = useState(0);
   const [selectedAspectRatio, setSelectedAspectRatio] =
     useAtom(aspectRatioAtom);
-  useEffect(() => {
-    console.log(renderPercent);
-  }, [renderPercent]);
-  const onClose = () => {
-    setRenderPercent(0);
-  };
+  const abortControllerRef = useRef(null);
 
   useEffect(() => {
-    console.log(layers);
-    const VideoLayers = layers
-      .filter((layer) => layer.assetType === "media")
-      .map((layer) => ({
-        orgFile: layer.orgFile,
-        changedTrims: layer.changedTrims,
-        start: layer.start,
-        end: layer.end,
-      }));
-    const TransitionLayers = layers
-      .filter((layer) => layer.assetType == "transition")
-      .map((layer) => layer.animationData);
-    console.log(layers[0].end, layers[0].end.toFixed(3));
-    mergeVideos(
-      VideoLayers,
-      (progress) => {
-        setRenderPercent((progress / 2) * 100);
-      },
-      selectedAspectRatio.width,
-      selectedAspectRatio.height
-    )
-      .then(({ data, mergePoints }) => {
+    // Create new AbortController for this render
+    abortControllerRef.current = new AbortController();
+
+    const startRender = async () => {
+      try {
+        const VideoLayers = layers
+          .filter((layer) => layer.assetType === "media")
+          .map((layer) => ({
+            name: layer.name,
+            orgFile: layer.orgFile,
+            changedTrims: layer.changedTrims,
+            start: layer.start,
+            end: layer.end,
+          }));
+        const TransitionLayers = layers
+          .filter((layer) => layer.assetType == "transition")
+          .map((layer) => layer.animationData);
+
+        const { data, mergePoints } = await mergeVideos(
+          VideoLayers,
+          (progress) => {
+            setRenderPercent((progress / 2) * 100);
+          },
+          selectedAspectRatio.width,
+          selectedAspectRatio.height,
+          abortControllerRef.current?.signal
+        );
+
         const markerTime = layers[1].animationData.markers[0].tm * (1 / 30);
         const pointsToMerge = [];
         for (let i = 0; i < mergePoints.length - 1; i++) {
@@ -55,7 +59,7 @@ const Render = () => {
           }
         }
 
-        convertLottieToPngSequenceAndBurn(
+        const blob = await convertLottieToPngSequenceAndBurn(
           TransitionLayers,
           data,
           (progress) => {
@@ -63,20 +67,48 @@ const Render = () => {
           },
           pointsToMerge,
           selectedAspectRatio.width,
-          selectedAspectRatio.height
-        )
-          .then((blob) => {
-            console.log(blob);
-            downloadUint8ArrayAsMP4(blob, "download_with_audio.mp4");
-          })
-          .catch((error) => {
-            console.log(error);
-          });
-      })
-      .catch((error) => {
-        console.log(error);
-      });
+          selectedAspectRatio.height,
+          abortControllerRef.current?.signal
+        );
+
+        const randomNum = Math.floor(Math.random() * 10000);
+        // downloadUint8ArrayAsMP4(blob, `Video${randomNum}.mp4`);
+        AddOnSdkInstance.app.document.addVideo(
+          new Blob([blob], { type: "video/mp4" })
+        );
+        ToastQueue.positive("Render complete", { timeout: 3000 });
+        navigate("/");
+      } catch (error) {
+        if (error.name === "AbortError") {
+          console.log("Render was cancelled");
+        } else {
+          console.error("Render error:", error);
+        }
+      }
+    };
+
+    startRender();
+
+    // Cleanup function
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, []);
+
+  const onClose = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      ToastQueue.neutral("Render cancelled", { timeout: 3000 });
+    }
+    navigate("/");
+  };
+
+  useEffect(() => {
+    console.log(layers);
+  }, [layers]);
+
   return (
     <div className="flex justify-center items-center ">
       <div className="w-full rounded-[8px] bg-white flex flex-col py-[20px] items-center px-[20px] relative space-y-5">

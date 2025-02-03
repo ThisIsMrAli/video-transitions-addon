@@ -37,6 +37,7 @@ const App = ({
         <div
           className={`bg-white w-full h-full flex flex-col relative py-1 px-1`}
         >
+        
           <div className="h-full overflow-hidden">
             <Outlet />
           </div>

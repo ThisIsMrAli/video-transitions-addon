@@ -47,11 +47,34 @@ export const getVideoFps = async (videoUrl) => {
   }
 };
 
-export const mergeVideos = async (videoInputs, onProgress, width, height) => {
+export const mergeVideos = async (
+  videoInputs,
+  onProgress,
+  width,
+  height,
+  signal
+) => {
+  let ffmpegInstances = [];
   try {
-    const ffmpegInstances = await Promise.all(
+    // Add signal check at the start of processing
+    if (signal?.aborted) {
+      throw new DOMException("Render aborted by user", "AbortError");
+    }
+
+    ffmpegInstances = await Promise.all(
       videoInputs.map(() => createFFmpegInstance())
     );
+
+    // Add abort handler
+    signal?.addEventListener("abort", () => {
+      ffmpegInstances.forEach((instance) => {
+        try {
+          instance.terminate();
+        } catch (error) {
+          console.log("FFmpeg instance already terminated");
+        }
+      });
+    });
 
     // Track durations for each video
     const durations = [];
@@ -193,8 +216,24 @@ export const mergeVideos = async (videoInputs, onProgress, width, height) => {
 
     return { data: finalData, mergePoints };
   } catch (error) {
-    console.error("Error merging videos:", error);
-    throw error;
+    // Clean up FFmpeg instances on error
+    if (ffmpegInstances.length) {
+      await Promise.all(
+        ffmpegInstances.map(async (instance) => {
+          try {
+            await instance.terminate();
+          } catch (terminateError) {
+            console.log("FFmpeg instance already terminated");
+          }
+        })
+      );
+    }
+    if (error.name === "AbortError") {
+      throw error;
+    } else {
+      console.error("Merge videos error:", error);
+      throw new Error("Failed to merge videos");
+    }
   }
 };
 
@@ -204,16 +243,34 @@ export async function convertLottieToPngSequenceAndBurn(
   onProgress,
   mergePoints,
   width,
-  height
+  height,
+  signal
 ) {
-  // Create a hidden container for Lottie animations
   const container = document.createElement("div");
   container.style.position = "absolute";
   container.style.visibility = "hidden";
   container.style.pointerEvents = "none";
   document.body.appendChild(container);
 
+  let ffmpeg = null;
   try {
+    if (signal?.aborted) {
+      throw new DOMException("Render aborted by user", "AbortError");
+    }
+
+    ffmpeg = await createFFmpegInstance();
+
+    // Add abort handler
+    signal?.addEventListener("abort", () => {
+      try {
+        if (ffmpeg) {
+          ffmpeg.terminate();
+        }
+      } catch (error) {
+        console.log("FFmpeg instance already terminated");
+      }
+    });
+
     // Validate input arrays
     if (lottieDataArray.length !== mergePoints.length) {
       throw new Error(
@@ -221,8 +278,6 @@ export async function convertLottieToPngSequenceAndBurn(
       );
     }
 
-    // Create FFmpeg instance
-    const ffmpeg = await createFFmpegInstance();
     await ffmpeg.writeFile("input.mp4", videoMp4);
 
     // Get video dimensions
@@ -451,7 +506,9 @@ export async function convertLottieToPngSequenceAndBurn(
     return new Blob([data], { type: "video/mp4" });
   } finally {
     // Clean up the container
-    document.body.removeChild(container);
+    if (container && container.parentNode) {
+      container.parentNode.removeChild(container);
+    }
   }
 }
 
