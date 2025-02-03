@@ -1,205 +1,195 @@
 import React, { useEffect, useRef, useState } from "react";
-import { layersAtom } from "../../../store/general";
+import { aspectRatioAtom, layersAtom } from "../../../store/general";
 import { useAtom } from "jotai";
-import lottie from "lottie-web";
-
-const TRANSITION_OVERLAP = 0.75; // 750ms overlap for transitions
 
 const ViewerBox = () => {
   const [layers] = useAtom(layersAtom);
+  const [aspectRatio] = useAtom(aspectRatioAtom);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
+  const videoRefs = useRef<HTMLVideoElement[]>([]);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const videoRefs = useRef<{ [key: string]: HTMLVideoElement }>({});
-  const lottieRef = useRef<any>(null);
-  const lottieContainerRef = useRef<HTMLDivElement>(null);
+  const [progress, setProgress] = useState(0);
+  const timerRef = useRef<number | null>(null);
 
-  const playVideo = async (
-    videoRef: HTMLVideoElement,
-    startTime: number,
-    endTime: number
-  ) => {
-    return new Promise<void>((resolve) => {
-      if (!videoRef) {
-        resolve();
-        return;
-      }
+  useEffect(() => {
+    (async () => {
+      const videoLayers = layers.filter((layer) => layer.assetType === "media");
+      if (!containerRef.current || videoLayers.length === 0) return;
 
-      videoRef.currentTime = startTime;
-      videoRef.style.display = "block";
-      videoRef.style.opacity = "1";
+      // Clear existing videos if any
+      videoRefs.current.forEach((video) => {
+        video.pause();
+        URL.revokeObjectURL(video.src);
+        video.remove();
+      });
+      videoRefs.current = [];
 
-      const onTimeUpdate = () => {
-        if (videoRef.currentTime >= endTime) {
-          videoRef.removeEventListener("timeupdate", onTimeUpdate);
-          resolve();
+      // Calculate total duration of all videos
+      const getTotalDuration = () => {
+        return videoLayers.reduce((total, layer) => {
+          const duration =
+            layer.end && layer.start
+              ? layer.end - layer.start
+              : videoRefs.current[videoLayers.indexOf(layer)]?.duration || 0;
+          return total + duration;
+        }, 0);
+      };
+
+      // Get current time across all videos
+      const getCurrentTime = () => {
+        let time = 0;
+        for (let i = 0; i < currentVideoIndex; i++) {
+          const layer = videoLayers[i];
+          time +=
+            layer.end && layer.start
+              ? layer.end - layer.start
+              : videoRefs.current[i]?.duration || 0;
+        }
+        time += videoRefs.current[currentVideoIndex]?.currentTime || 0;
+        return time;
+      };
+
+      // Create video elements
+      videoRefs.current = videoLayers.map((layer, index) => {
+        const video = document.createElement("video");
+        video.src = URL.createObjectURL(layer.orgFile);
+        video.style.cssText = `
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          opacity: ${index === currentVideoIndex ? 1 : 0};
+        `;
+        video.muted = true;
+        video.playsInline = true;
+        containerRef.current?.appendChild(video);
+        return video;
+      });
+
+      // Timeline click handler
+      const handleTimelineClick = (e: MouseEvent) => {
+        if (!timelineRef.current || videoLayers.length === 0) return;
+
+        const rect = timelineRef.current.getBoundingClientRect();
+        const clickPosition = (e.clientX - rect.left) / rect.width;
+        const totalDuration = getTotalDuration();
+        const targetTime = totalDuration * clickPosition;
+
+        // Find which video this time corresponds to
+        let accumulatedTime = 0;
+        for (let i = 0; i < videoLayers.length; i++) {
+          const layer = videoLayers[i];
+          const videoDuration =
+            layer.end && layer.start
+              ? layer.end - layer.start
+              : videoRefs.current[i].duration;
+
+          if (accumulatedTime + videoDuration > targetTime) {
+            // This is the video we want
+            videoRefs.current[currentVideoIndex].style.opacity = "0";
+            videoRefs.current[i].style.opacity = "1";
+            videoRefs.current[i].currentTime = targetTime - accumulatedTime;
+            setCurrentVideoIndex(i);
+            break;
+          }
+          accumulatedTime += videoDuration;
         }
       };
 
-      videoRef.addEventListener("timeupdate", onTimeUpdate);
-      const playPromise = videoRef.play();
-      if (playPromise) {
-        playPromise.catch((error) => {
-          console.error("Error playing video:", error);
-          resolve();
+      // Add timeline event listeners
+      if (timelineRef.current) {
+        timelineRef.current.addEventListener("mousedown", handleTimelineClick);
+      }
+
+      const checkProgress = () => {
+        const currentVideo = videoRefs.current[currentVideoIndex];
+        if (!currentVideo) return;
+
+        const currentLayer = videoLayers[currentVideoIndex];
+        const videoDuration =
+          currentLayer.end && currentLayer.start
+            ? currentLayer.end - currentLayer.start
+            : currentVideo.duration;
+
+        // Update progress bar
+        const totalDuration = getTotalDuration();
+        const currentTime = getCurrentTime();
+        setProgress((currentTime / totalDuration) * 100);
+
+        if (currentVideo.currentTime >= videoDuration) {
+          currentVideo.style.opacity = "0";
+          const nextIndex =
+            currentVideoIndex === videoRefs.current.length - 1
+              ? 0
+              : currentVideoIndex + 1;
+          const nextVideo = videoRefs.current[nextIndex];
+          nextVideo.currentTime = 0;
+          nextVideo.style.opacity = "1";
+          nextVideo.play().catch((err) => console.log("Playback failed:", err));
+          setCurrentVideoIndex(nextIndex);
+        }
+      };
+
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+
+      timerRef.current = window.setInterval(checkProgress, 50);
+
+      // Start playing the current video
+      const currentVideo = videoRefs.current[currentVideoIndex];
+      if (currentVideo) {
+        currentVideo
+          .play()
+          .catch((err) => console.log("Playback failed:", err));
+      }
+
+      return () => {
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+        }
+        if (timelineRef.current) {
+          timelineRef.current.removeEventListener(
+            "mousedown",
+            handleTimelineClick
+          );
+        }
+        videoRefs.current.forEach((video) => {
+          URL.revokeObjectURL(video.src);
+          video.remove();
         });
-      }
-    });
-  };
-
-  const playTransition = async (
-    video1Ref: HTMLVideoElement,
-    video2Ref: HTMLVideoElement,
-    transitionData: any
-  ) => {
-    return new Promise<void>((resolve) => {
-      if (!lottieContainerRef.current) {
-        resolve();
-        return;
-      }
-
-      // Update Lottie animation
-      if (lottieRef.current) {
-        lottieRef.current.destroy();
-      }
-
-      lottieRef.current = lottie.loadAnimation({
-        container: lottieContainerRef.current,
-        animationData: transitionData,
-        loop: false,
-        autoplay: false,
-      });
-
-      lottieContainerRef.current.style.display = "block";
-      lottieRef.current.goToAndPlay(0);
-
-      // Halfway through transition, switch videos
-      setTimeout(() => {
-        if (video1Ref) {
-          video1Ref.pause();
-          video1Ref.style.display = "none";
-        }
-        if (video2Ref) {
-          video2Ref.style.display = "block";
-          video2Ref.play();
-        }
-      }, (lottieRef.current.getDuration() * 1000) / 2);
-
-      lottieRef.current.addEventListener(
-        "complete",
-        () => {
-          if (lottieContainerRef.current) {
-            lottieContainerRef.current.style.display = "none";
-          }
-          resolve();
-        },
-        { once: true }
-      );
-    });
-  };
-
-  const playSequence = async () => {
-    setIsPlaying(true);
-    const videos = layers.filter((layer) => layer.assetType === "media");
-
-    try {
-      // Hide all videos initially
-      Object.values(videoRefs.current).forEach((ref) => {
-        if (ref) {
-          ref.style.display = "none";
-          ref.style.opacity = "1";
-        }
-      });
-
-      for (let i = 0; i < videos.length; i++) {
-        const currentVideo = videos[i];
-        const nextVideo = videos[i + 1];
-        const currentVideoRef = videoRefs.current[currentVideo.id];
-        const nextVideoRef = nextVideo ? videoRefs.current[nextVideo.id] : null;
-
-        const transitionIndex = layers.findIndex(
-          (layer) =>
-            layer.assetType === "transition" &&
-            layers.indexOf(currentVideo) < layers.indexOf(layer) &&
-            (nextVideo
-              ? layers.indexOf(layer) < layers.indexOf(nextVideo)
-              : true)
-        );
-
-        const hasTransition = transitionIndex !== -1 && nextVideo;
-        const videoDuration = currentVideo.end - currentVideo.start;
-        const videoStart = currentVideo.start;
-
-        if (hasTransition) {
-          const videoPromise = playVideo(
-            currentVideoRef,
-            videoStart,
-            videoDuration
-          );
-
-          await new Promise((resolve) =>
-            setTimeout(resolve, (videoDuration - TRANSITION_OVERLAP) * 1000)
-          );
-
-          await playTransition(
-            currentVideoRef,
-            nextVideoRef,
-            layers[transitionIndex].animationData
-          );
-
-          await videoPromise;
-        } else {
-          await playVideo(currentVideoRef, videoStart, videoDuration);
-        }
-      }
-    } catch (error) {
-      console.error("Error in playSequence:", error);
-    }
-
-    setIsPlaying(false);
-  };
-
-  useEffect(() => {
-    playSequence();
-  }, [layers]);
+      };
+    })();
+  }, [layers, currentVideoIndex]);
 
   return (
-    <div className="w-[280px] h-[158px] bg-[#FBFBFB] border border-solid border-[#EBEBEB] rounded-[8px] flex flex-col items-center justify-center overflow-hidden relative">
-      {layers.length > 0 ? (
-        <>
-          {layers
-            .filter((layer) => layer.assetType === "media")
-            .map((layer) => (
-              <video
-                key={layer.id}
-                ref={(el) => {
-                  if (el) videoRefs.current[layer.id] = el;
-                }}
-                className="absolute w-full h-full object-cover"
-                src={layer.file}
-                style={{
-                  display: "none",
-                  opacity: 1,
-                  transition: "opacity 0.1s ease-in-out",
-                }}
-                preload="auto"
-                muted
-              />
-            ))}
+    <div className="relative w-full bg-black">
+      <div
+        className="relative w-full"
+        style={{
+          paddingTop: `${(aspectRatio.height / aspectRatio.width) * 100}%`,
+        }}
+      >
+        <div ref={containerRef} className="absolute inset-0" />
+      </div>
+
+      <div className="relative h-8 px-4 bg-gray-900">
+        <div
+          ref={timelineRef}
+          className="absolute inset-0 mx-4 my-3 bg-gray-700 rounded-full cursor-pointer"
+        >
           <div
-            ref={lottieContainerRef}
-            className="absolute inset-0 z-10"
-            style={{
-              display: "none",
-              opacity: 1,
-              transition: "opacity 0.1s ease-in-out",
-            }}
-          />
-        </>
-      ) : (
-        <h3 className="text-[#c1c1c1] text-center text-[30px] font-[400] m-0 p-0 leading-[36px]">
-          viewer <br /> box
-        </h3>
-      )}
+            ref={progressRef}
+            className="absolute h-full bg-blue-500 rounded-full"
+            style={{ width: `${progress}%` }}
+          >
+            <div className="absolute right-0 w-4 h-4 -translate-y-1/4 translate-x-1/2 bg-white rounded-full shadow-lg" />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
