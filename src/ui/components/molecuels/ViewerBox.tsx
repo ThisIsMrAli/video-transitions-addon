@@ -15,17 +15,54 @@ const ViewerBox = () => {
   const timerRef = useRef<number | null>(null);
   const isSeekingRef = useRef(false);
   const activeVideoIndexRef = useRef(0);
+  const blobUrlsRef = useRef<Map<number, string>>(new Map());
 
   useEffect(() => {
     const videoLayers = layers.filter((layer) => layer.assetType === "media");
     if (!containerRef.current || videoLayers.length === 0) return;
 
+    // Cleanup function for a single video
+    const cleanupVideo = (
+      video: HTMLVideoElement | undefined,
+      index: number
+    ) => {
+      if (video) {
+        video.pause();
+        video.removeAttribute("src"); // Remove source before cleanup
+        video.load(); // Reset video element
+        video.remove();
+      }
+
+      const blobUrl = blobUrlsRef.current.get(index);
+      if (blobUrl) {
+        try {
+          URL.revokeObjectURL(blobUrl);
+          blobUrlsRef.current.delete(index);
+        } catch (error) {
+          console.log("Failed to revoke URL for index", index, error);
+        }
+      }
+    };
+
+    // Cleanup all existing videos
+    videoRefs.current.forEach((video, index) => {
+      cleanupVideo(video, index);
+    });
+    videoRefs.current = [];
+    blobUrlsRef.current.clear();
+
     // Utility functions
     const getVideoDuration = (index: number) => {
       const layer = videoLayers[index];
-      return layer.end && layer.start
-        ? layer.end - layer.start
-        : videoRefs.current[index]?.duration || 0;
+      if (layer.changedTrims && layer.end != null && layer.start != null) {
+        return layer.end - layer.start;
+      }
+      return videoRefs.current[index]?.duration || 0;
+    };
+
+    const getVideoStartTime = (index: number) => {
+      const layer = videoLayers[index];
+      return layer.changedTrims ? layer.start || 0 : 0;
     };
 
     const getTotalDuration = () => {
@@ -41,9 +78,16 @@ const ViewerBox = () => {
         .slice(0, activeIndex)
         .reduce((total, _, index) => total + getVideoDuration(index), 0);
 
-      return (
-        previousDuration + (videoRefs.current[activeIndex]?.currentTime || 0)
-      );
+      const currentVideo = videoRefs.current[activeIndex];
+      const currentLayer = videoLayers[activeIndex];
+
+      if (currentLayer.changedTrims) {
+        const videoCurrentTime = currentVideo?.currentTime || 0;
+        const trimStart = currentLayer.start || 0;
+        return previousDuration + (videoCurrentTime - trimStart);
+      }
+
+      return previousDuration + (currentVideo?.currentTime || 0);
     };
 
     // Video creation and setup
@@ -51,8 +95,17 @@ const ViewerBox = () => {
       layer: (typeof videoLayers)[0],
       index: number
     ) => {
+      // Cleanup any existing video at this index
+      cleanupVideo(videoRefs.current[index], index);
+
       const video = document.createElement("video");
-      video.src = URL.createObjectURL(layer.orgFile);
+
+      // Create and store blob URL
+      const blobUrl = URL.createObjectURL(layer.orgFile);
+      blobUrlsRef.current.set(index, blobUrl);
+
+      // Configure video
+      video.src = blobUrl;
       video.style.cssText = `
         position: absolute;
         top: 0;
@@ -63,6 +116,21 @@ const ViewerBox = () => {
       `;
       video.muted = true;
       video.playsInline = true;
+
+      // Handle errors
+      video.onerror = (e) => {
+        console.log("Video error:", e);
+        // Attempt to recreate the video element if there's an error
+        cleanupVideo(video, index);
+        const newVideo = createVideoElement(layer, index);
+        videoRefs.current[index] = newVideo;
+      };
+
+      // Set initial time if trimmed
+      if (layer.changedTrims && layer.start) {
+        video.currentTime = layer.start;
+      }
+
       containerRef.current?.appendChild(video);
       return video;
     };
@@ -76,18 +144,26 @@ const ViewerBox = () => {
       try {
         await video.play();
       } catch (err) {
-        console.log("Playback failed:", err);
+       // console.log("Playback failed:", err);
       }
     };
 
-    const switchToVideo = async (index: number, startTime = 0) => {
+    const switchToVideo = async (index: number, targetTime = 0) => {
       videoRefs.current.forEach((v) => {
         v.pause();
         v.style.opacity = "0";
       });
 
       const targetVideo = videoRefs.current[index];
-      targetVideo.currentTime = startTime;
+      const layer = videoLayers[index];
+
+      // Calculate actual video time considering trim
+      let actualVideoTime = targetTime;
+      if (layer.changedTrims) {
+        actualVideoTime += layer.start || 0;
+      }
+
+      targetVideo.currentTime = actualVideoTime;
 
       await new Promise<void>((resolve) => {
         const handleSeeked = () => {
@@ -130,12 +206,23 @@ const ViewerBox = () => {
       if (isSeekingRef.current) return;
 
       const currentVideo = videoRefs.current[activeVideoIndexRef.current];
+      const currentLayer = videoLayers[activeVideoIndexRef.current];
       if (!currentVideo) return;
 
       const videoDuration = getVideoDuration(activeVideoIndexRef.current);
       setProgress((getCurrentTime() / getTotalDuration()) * 100);
 
-      if (currentVideo.currentTime >= videoDuration) {
+      // Check if current video reached its trim end or natural end
+      let shouldSwitchVideo = false;
+      if (currentLayer.changedTrims) {
+        shouldSwitchVideo =
+          currentVideo.currentTime >=
+          (currentLayer.end || currentVideo.duration);
+      } else {
+        shouldSwitchVideo = currentVideo.currentTime >= videoDuration;
+      }
+
+      if (shouldSwitchVideo) {
         const nextIndex =
           activeVideoIndexRef.current === videoRefs.current.length - 1
             ? 0
@@ -144,7 +231,7 @@ const ViewerBox = () => {
       }
     };
 
-    // Setup and cleanup
+    // Initial setup
     setupVideos();
     timelineRef.current?.addEventListener("mousedown", handleTimelineClick);
     timerRef.current = window.setInterval(checkProgress, 50);
@@ -153,16 +240,22 @@ const ViewerBox = () => {
       playVideo(videoRefs.current[activeVideoIndexRef.current]);
     }
 
+    // Cleanup function
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
       timelineRef.current?.removeEventListener(
         "mousedown",
         handleTimelineClick
       );
-      videoRefs.current.forEach((video) => {
-        URL.revokeObjectURL(video.src);
-        video.remove();
+
+      // Clean up all videos and blob URLs
+      videoRefs.current.forEach((video, index) => {
+        cleanupVideo(video, index);
       });
+      videoRefs.current = [];
+      blobUrlsRef.current.clear();
     };
   }, [layers]);
 
