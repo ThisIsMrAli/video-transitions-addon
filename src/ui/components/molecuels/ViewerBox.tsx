@@ -9,10 +9,10 @@ const ViewerBox = () => {
   const timelineRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<HTMLVideoElement[]>([]);
-  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const timerRef = useRef<number | null>(null);
   const isSeekingRef = useRef(false);
+  const activeVideoIndexRef = useRef(0);
 
   useEffect(() => {
     const videoLayers = layers.filter((layer) => layer.assetType === "media");
@@ -29,17 +29,17 @@ const ViewerBox = () => {
       }, 0);
     };
 
-    // Get current time across all videos
+    // Update getCurrentTime to use activeVideoIndexRef
     const getCurrentTime = () => {
       let time = 0;
-      for (let i = 0; i < currentVideoIndex; i++) {
+      for (let i = 0; i < activeVideoIndexRef.current; i++) {
         const layer = videoLayers[i];
         time +=
           layer.end && layer.start
             ? layer.end - layer.start
             : videoRefs.current[i]?.duration || 0;
       }
-      time += videoRefs.current[currentVideoIndex]?.currentTime || 0;
+      time += videoRefs.current[activeVideoIndexRef.current]?.currentTime || 0;
       return time;
     };
 
@@ -53,7 +53,7 @@ const ViewerBox = () => {
         left: 0;
         width: 100%;
         height: 100%;
-        opacity: ${index === currentVideoIndex ? 1 : 0};
+        opacity: ${index === activeVideoIndexRef.current ? 1 : 0};
       `;
       video.muted = true;
       video.playsInline = true;
@@ -68,7 +68,10 @@ const ViewerBox = () => {
       isSeekingRef.current = true;
 
       // Pause all videos during seeking
-      videoRefs.current.forEach((video) => video.pause());
+      videoRefs.current.forEach((video) => {
+        video.pause();
+        video.style.opacity = "0";
+      });
 
       const rect = timelineRef.current.getBoundingClientRect();
       const clickPosition = (e.clientX - rect.left) / rect.width;
@@ -77,6 +80,9 @@ const ViewerBox = () => {
 
       // Find which video this time corresponds to
       let accumulatedTime = 0;
+      let targetIndex = 0;
+      let videoTargetTime = 0;
+
       for (let i = 0; i < videoLayers.length; i++) {
         const layer = videoLayers[i];
         const videoDuration =
@@ -85,25 +91,34 @@ const ViewerBox = () => {
             : videoRefs.current[i].duration;
 
         if (accumulatedTime + videoDuration > targetTime) {
-          // Hide all videos first
-          videoRefs.current.forEach((v) => (v.style.opacity = "0"));
-
-          // Set up the new video
-          const targetVideo = videoRefs.current[i];
-          targetVideo.currentTime = targetTime - accumulatedTime;
-          targetVideo.style.opacity = "1";
-
-          // Wait for video to be ready at new time
-          try {
-            await targetVideo.play();
-            setCurrentVideoIndex(i);
-          } catch (err) {
-            console.log("Playback failed:", err);
-          }
-
+          targetIndex = i;
+          videoTargetTime = targetTime - accumulatedTime;
           break;
         }
         accumulatedTime += videoDuration;
+      }
+
+      const targetVideo = videoRefs.current[targetIndex];
+      
+      // Set the time and wait for it to be ready
+      targetVideo.currentTime = videoTargetTime;
+      
+      await new Promise<void>((resolve) => {
+        const handleSeeked = () => {
+          targetVideo.removeEventListener('seeked', handleSeeked);
+          resolve();
+        };
+        targetVideo.addEventListener('seeked', handleSeeked);
+      });
+
+      // Update the UI and play the video
+      targetVideo.style.opacity = "1";
+      activeVideoIndexRef.current = targetIndex;
+      
+      try {
+        await targetVideo.play();
+      } catch (err) {
+        console.log("Playback failed:", err);
       }
 
       isSeekingRef.current = false;
@@ -117,10 +132,10 @@ const ViewerBox = () => {
     const checkProgress = () => {
       if (isSeekingRef.current) return;
 
-      const currentVideo = videoRefs.current[currentVideoIndex];
+      const currentVideo = videoRefs.current[activeVideoIndexRef.current];
       if (!currentVideo) return;
 
-      const currentLayer = videoLayers[currentVideoIndex];
+      const currentLayer = videoLayers[activeVideoIndexRef.current];
       const videoDuration =
         currentLayer.end && currentLayer.start
           ? currentLayer.end - currentLayer.start
@@ -134,14 +149,14 @@ const ViewerBox = () => {
       if (currentVideo.currentTime >= videoDuration) {
         currentVideo.style.opacity = "0";
         const nextIndex =
-          currentVideoIndex === videoRefs.current.length - 1
+          activeVideoIndexRef.current === videoRefs.current.length - 1
             ? 0
-            : currentVideoIndex + 1;
+            : activeVideoIndexRef.current + 1;
         const nextVideo = videoRefs.current[nextIndex];
         nextVideo.currentTime = 0;
         nextVideo.style.opacity = "1";
         nextVideo.play().catch((err) => console.log("Playback failed:", err));
-        setCurrentVideoIndex(nextIndex);
+        activeVideoIndexRef.current = nextIndex;
       }
     };
 
@@ -153,7 +168,7 @@ const ViewerBox = () => {
 
     // Only start playing if not seeking
     if (!isSeekingRef.current) {
-      const currentVideo = videoRefs.current[currentVideoIndex];
+      const currentVideo = videoRefs.current[activeVideoIndexRef.current];
       if (currentVideo) {
         currentVideo
           .play()
@@ -176,7 +191,7 @@ const ViewerBox = () => {
         video.remove();
       });
     };
-  }, [layers, currentVideoIndex]);
+  }, [layers]);
 
   return (
     <div className="relative w-full bg-black">
