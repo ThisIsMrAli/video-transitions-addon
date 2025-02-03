@@ -22,7 +22,7 @@ const TransitionOverlay = ({ currentTime }) => {
     return mergePoints;
   };
   const [mergePoints, setMergePoints] = useState([]);
-
+  console.log("mergePoints", mergePoints);
 
   useEffect(() => {
     setMergePoints(getMergePoints(layers));
@@ -34,20 +34,48 @@ const TransitionOverlay = ({ currentTime }) => {
     );
     if (transitionLayers.length === 0) return;
 
+    // Check if we're near any merge point
+    const isNearMergePoint = mergePoints.some((point) => {
+      // Show transition 1 second before and after merge point
+      return Math.abs(currentTime - point) <= 1;
+    });
+
+    if (!isNearMergePoint) {
+      // If not near merge point, cleanup and return
+      if (lottieAnimationRef.current) {
+        lottieAnimationRef.current.destroy();
+        lottieAnimationRef.current = null;
+      }
+      return;
+    }
+
+    // Find the current merge point we're transitioning at
+    const currentMergePointIndex = mergePoints.findIndex(
+      (point) => Math.abs(currentTime - point) <= 1
+    );
+    currentTransitionIndexRef.current =
+      currentMergePointIndex % transitionLayers.length;
+
     const currentTransitionLayer =
       transitionLayers[currentTransitionIndexRef.current];
 
-    lottieAnimationRef.current = Lottie.loadAnimation({
-      container: lottieContainerRef.current,
-      renderer: "svg",
-      loop: false,
-      autoplay: false,
-      animationData: currentTransitionLayer.animationData,
-    });
+    if (!lottieAnimationRef.current) {
+      lottieAnimationRef.current = Lottie.loadAnimation({
+        container: lottieContainerRef.current,
+        renderer: "svg",
+        loop: false,
+        autoplay: false,
+        animationData: currentTransitionLayer.animationData,
+      });
+    }
 
     const totalFrames = lottieAnimationRef.current.totalFrames;
-
-    const progress = Math.min(Math.max(currentTime - 1, 0), 1);
+    // Calculate progress based on distance from merge point
+    // -1 to 0 seconds -> 0 to 0.5 progress
+    // 0 to 1 seconds -> 0.5 to 1 progress
+    const distanceFromMergePoint =
+      currentTime - mergePoints[currentMergePointIndex];
+    const progress = (distanceFromMergePoint + 1) / 2; // Convert -1,1 range to 0,1 range
     const frame = Math.floor(progress * (totalFrames - 1));
 
     lottieAnimationRef.current.goToAndStop(frame, true);
@@ -58,7 +86,7 @@ const TransitionOverlay = ({ currentTime }) => {
         lottieAnimationRef.current = null;
       }
     };
-  }, [layers, currentTime]);
+  }, [layers, currentTime, mergePoints]);
 
   return (
     <div
