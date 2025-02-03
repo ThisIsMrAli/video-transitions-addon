@@ -2,7 +2,7 @@ import { ToastQueue } from "@react-spectrum/toast";
 import React, { useRef, useState, useEffect } from "react";
 import { MdMoreHoriz } from "react-icons/md";
 import { uuid } from "short-uuid";
-import { layersAtom } from "../../../store/general";
+import { layersAtom, aspectRatioAtom } from "../../../store/general";
 import { useAtom } from "jotai";
 
 const VideoBox = ({ item }) => {
@@ -15,6 +15,16 @@ const VideoBox = ({ item }) => {
   const [showContextMenu, setShowContextMenu] = useState(false);
   const contextRef = useRef(null);
   const [layers, setLayers] = useAtom(layersAtom);
+  const [aspectRatio] = useAtom(aspectRatioAtom);
+  const boxSize = 150; // base size
+  const ratio = aspectRatio.width / aspectRatio.height;
+
+  // Calculate dimensions while maintaining aspect ratio
+  const dimensions =
+    ratio >= 1
+      ? { width: boxSize, height: boxSize / ratio }
+      : { width: boxSize * ratio, height: boxSize };
+
   const handlePlay = () => {
     if (videoRef.current) {
       if (isPlaying) {
@@ -34,8 +44,6 @@ const VideoBox = ({ item }) => {
     }
   };
 
-
-
   const calculatePosition = (clientX) => {
     if (!videoRef.current || !sliderRef.current) return 0;
     const rect = sliderRef.current.getBoundingClientRect();
@@ -50,7 +58,6 @@ const VideoBox = ({ item }) => {
 
   const handleMouseMove = (e) => {
     if (!isDragging) return;
-    
 
     const newTime = calculatePosition(e.clientX);
     if (isDragging === "start") {
@@ -59,22 +66,22 @@ const VideoBox = ({ item }) => {
           return {
             ...layer,
             start: Math.min(newTime, trimEnd),
-            changedTrims:true
+            changedTrims: true,
           };
         }
         return layer;
       });
       setLayers(newLayers);
-   
+
       if (videoRef.current) videoRef.current.currentTime = newTime;
     } else {
-    //  setTrimEnd(Math.max(newTime, trimStart));
+      //  setTrimEnd(Math.max(newTime, trimStart));
       const newLayers = layers.map((layer) => {
         if (layer.id === item.id) {
           return {
             ...layer,
             end: Math.max(newTime, trimStart),
-            changedTrims:true
+            changedTrims: true,
           };
         }
         return layer;
@@ -155,10 +162,9 @@ const VideoBox = ({ item }) => {
                   orgFile: file,
                   type: file.type,
                   name: file.name,
-                  changedTrims:false,
+                  changedTrims: false,
                   start: 0,
                   end: video.duration,
-
                 };
               }
               return layer;
@@ -176,11 +182,15 @@ const VideoBox = ({ item }) => {
     input.click();
   };
 
-  const handeVideoTrimChange=()=>{
-    
-  }
+  const handeVideoTrimChange = () => {};
   return (
-    <div className="relative group w-[150px] h-[150px] bg-[#f8f8f8] overflow-hidden outline outline-2 outline-[#EBEBEB] rounded-[8px]">
+    <div
+      className="relative group bg-[#f8f8f8] overflow-hidden outline outline-2 outline-[#EBEBEB] rounded-[8px]"
+      style={{
+        width: `${dimensions.width}px`,
+        height: `${dimensions.height}px`,
+      }}
+    >
       {true && (
         <div
           ref={contextRef}
@@ -218,7 +228,6 @@ const VideoBox = ({ item }) => {
         muted={true}
         className="w-full h-full object-contain"
         onTimeUpdate={handleTimeUpdate}
-      
       >
         <source src={item.file} type={item.type} />
         Your browser does not support the video tag.

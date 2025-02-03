@@ -261,12 +261,22 @@ const ViewerBox = () => {
   ]);
 
   return (
-    <div className="relative w-full bg-black">
+    <div className="relative w-full   bg-black flex flex-col">
       <div
-        className="relative w-full"
-        style={{
-          paddingTop: `${(aspectRatio.height / aspectRatio.width) * 100}%`,
-        }}
+        style={
+          aspectRatio.name == "Vertical"
+            ? {
+                width: "99px",
+                height: "176px",
+              }
+            : aspectRatio.name == "Horizontal"
+              ? {
+                  width: "312px",
+                  height: "176px",
+                }
+              : { width: "176px", height: "176px" }
+        }
+        className="relative outline outline-red-500 mx-auto my-2"
       >
         <TransitionOverlay currentTime={getCurrentTime()} />
         <div ref={containerRef} className="absolute inset-0 z-0" />

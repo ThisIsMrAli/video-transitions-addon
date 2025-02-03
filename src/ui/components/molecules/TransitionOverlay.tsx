@@ -136,15 +136,7 @@ const TransitionOverlay = ({ currentTime }) => {
   return (
     <div
       ref={lottieContainerRef}
-      className="absolute inset-0 pointer-events-none"
-      style={{
-        zIndex: 9999,
-        position: "absolute",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-      }}
+      className="absolute inset-0 pointer-events-none z-10 w-full h-full"
     />
   );
 };
