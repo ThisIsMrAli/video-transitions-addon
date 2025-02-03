@@ -272,8 +272,7 @@ const ViewerBox = () => {
           paddingTop: `${(aspectRatio.height / aspectRatio.width) * 100}%`,
         }}
       >
-        <div className="absolute inset-0 z-10 bg-transparent">
-         
+       
           <TransitionOverlay
             layers={layers}
             currentTime={getCurrentTime()}
@@ -281,7 +280,7 @@ const ViewerBox = () => {
             activeVideoIndex={activeVideoIndexRef.current}
             getVideoDuration={getVideoDuration}
           />
-        </div>
+        
         <div ref={containerRef} className="absolute inset-0 z-0" />
       </div>
 

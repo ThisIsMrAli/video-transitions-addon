@@ -21,27 +21,20 @@ const TransitionOverlay = ({
     const currentTransitionLayer =
       transitionLayers[currentTransitionIndexRef.current];
 
-    // Simplified trigger: play at currentTime = 1
-
-    console.log("Starting transition animation at time:", currentTime);
-    console.log(currentTransitionLayer);
     lottieAnimationRef.current = Lottie.loadAnimation({
       container: lottieContainerRef.current,
       renderer: "svg",
-      loop: true,
-      autoplay: true,
+      loop: false,
+      autoplay: false,
       animationData: currentTransitionLayer.animationData,
     });
 
-    lottieAnimationRef.current.addEventListener("complete", () => {
-      console.log("Transition animation complete");
-      if (lottieAnimationRef.current) {
-        lottieAnimationRef.current.destroy();
-        lottieAnimationRef.current = null;
-      }
-      currentTransitionIndexRef.current =
-        (currentTransitionIndexRef.current + 1) % transitionLayers.length;
-    });
+    const totalFrames = lottieAnimationRef.current.totalFrames;
+
+    const progress = Math.min(Math.max(currentTime - 1, 0), 1);
+    const frame = Math.floor(progress * (totalFrames - 1));
+
+    lottieAnimationRef.current.goToAndStop(frame, true);
 
     return () => {
       if (lottieAnimationRef.current) {
