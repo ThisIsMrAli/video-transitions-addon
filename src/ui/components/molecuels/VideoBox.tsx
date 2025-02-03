@@ -16,14 +16,20 @@ const VideoBox = ({ item }) => {
   const contextRef = useRef(null);
   const [layers, setLayers] = useAtom(layersAtom);
   const [aspectRatio] = useAtom(aspectRatioAtom);
-  const boxSize = 150; // base size
-  const ratio = aspectRatio.width / aspectRatio.height;
 
-  // Calculate dimensions while maintaining aspect ratio
+  // Remove the baseSize and ratio calculations
   const dimensions =
-    ratio >= 1
-      ? { width: boxSize, height: boxSize / ratio }
-      : { width: boxSize * ratio, height: boxSize };
+    aspectRatio.name == "Vertical"
+      ? {
+          width: "99px",
+          height: "176px",
+        }
+      : aspectRatio.name == "Horizontal"
+      ? {
+          width: "312px",
+          height: "176px",
+        }
+      : { width: "176px", height: "176px" };
 
   const handlePlay = () => {
     if (videoRef.current) {
@@ -186,10 +192,7 @@ const VideoBox = ({ item }) => {
   return (
     <div
       className="relative group bg-[#f8f8f8] overflow-hidden outline outline-2 outline-[#EBEBEB] rounded-[8px]"
-      style={{
-        width: `${dimensions.width}px`,
-        height: `${dimensions.height}px`,
-      }}
+      style={dimensions}
     >
       {true && (
         <div
