@@ -18,12 +18,11 @@ const TransitionOverlay = ({ currentTime }) => {
       const duration = end - start;
       cumulativeDuration += duration;
       const mergePoint = cumulativeDuration;
-      mergePoints.push(mergePoint);
+      if (index < videoLayers.length - 1) mergePoints.push(mergePoint);
     });
     return mergePoints;
   };
   const [mergePoints, setMergePoints] = useState([]);
-
 
   useEffect(() => {
     setMergePoints(getMergePoints(layers));
@@ -35,10 +34,15 @@ const TransitionOverlay = ({ currentTime }) => {
     );
     if (transitionLayers.length === 0) return;
 
-    // Check if we're near any merge point
-    const isNearMergePoint = mergePoints.some((point) => {
-      // Show transition 1 second before and after merge point
-      return Math.abs(currentTime - point) <= 1;
+    // Get marker time in seconds (converting from frames at 30fps)
+    const markerTime =
+      transitionLayers[0].animationData.markers[0].tm * (1 / 30);
+
+    // Check if we're near any merge point, considering the marker offset
+    const isNearMergePoint = mergePoints.some((point, index) => {
+      const adjustedPoint = point - markerTime;
+      // Show transition starting from marker time before merge point
+      return currentTime >= adjustedPoint && currentTime <= point + 1;
     });
 
     if (!isNearMergePoint) {
@@ -54,9 +58,10 @@ const TransitionOverlay = ({ currentTime }) => {
     }
 
     // Find the current merge point we're transitioning at
-    const currentMergePointIndex = mergePoints.findIndex(
-      (point) => Math.abs(currentTime - point) <= 1
-    );
+    const currentMergePointIndex = mergePoints.findIndex((point) => {
+      const adjustedPoint = point - markerTime;
+      return currentTime >= adjustedPoint && currentTime <= point + 1;
+    });
     currentTransitionIndexRef.current =
       currentMergePointIndex % transitionLayers.length;
 
@@ -77,20 +82,22 @@ const TransitionOverlay = ({ currentTime }) => {
       if (!lottieAnimationRef.current) return;
 
       const totalFrames = lottieAnimationRef.current.totalFrames;
-      const distanceFromMergePoint =
-        currentTime - mergePoints[currentMergePointIndex];
-      const progress = (distanceFromMergePoint + 1) / 2; // Convert -1,1 range to 0,1 range
-      const frame = Math.floor(progress * (totalFrames - 1));
+      const currentMergePoint = mergePoints[currentMergePointIndex];
+      const adjustedMergePoint = currentMergePoint - markerTime;
 
-      // Ensure frame is within valid range
+      // Calculate progress based on the adjusted timing
+      const totalDuration = markerTime + 1; // marker time plus 1 second after merge point
+      const progress = (currentTime - adjustedMergePoint) / totalDuration;
+      const clampedProgress = Math.max(0, Math.min(1, progress));
+
+      const frame = Math.floor(clampedProgress * (totalFrames - 1));
       const clampedFrame = Math.max(0, Math.min(frame, totalFrames - 1));
+
       lottieAnimationRef.current.goToAndStop(clampedFrame, true);
 
-      // Request next frame
       animationFrameRef.current = requestAnimationFrame(updateFrame);
     };
 
-    // Start the animation loop
     updateFrame();
 
     return () => {
