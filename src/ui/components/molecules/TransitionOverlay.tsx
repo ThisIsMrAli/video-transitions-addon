@@ -7,6 +7,7 @@ const TransitionOverlay = ({ currentTime }) => {
   const lottieAnimationRef = useRef(null);
   const currentTransitionIndexRef = useRef(0);
   const [layers, setLayers] = useAtom(layersAtom);
+  const animationFrameRef = useRef(null);
   const getMergePoints = (layers) => {
     const mergePoints = [];
     const videoLayers = layers.filter((l) => l.assetType == "media");
@@ -22,7 +23,7 @@ const TransitionOverlay = ({ currentTime }) => {
     return mergePoints;
   };
   const [mergePoints, setMergePoints] = useState([]);
-  console.log("mergePoints", mergePoints);
+
 
   useEffect(() => {
     setMergePoints(getMergePoints(layers));
@@ -45,6 +46,9 @@ const TransitionOverlay = ({ currentTime }) => {
       if (lottieAnimationRef.current) {
         lottieAnimationRef.current.destroy();
         lottieAnimationRef.current = null;
+      }
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
       }
       return;
     }
@@ -69,21 +73,33 @@ const TransitionOverlay = ({ currentTime }) => {
       });
     }
 
-    const totalFrames = lottieAnimationRef.current.totalFrames;
-    // Calculate progress based on distance from merge point
-    // -1 to 0 seconds -> 0 to 0.5 progress
-    // 0 to 1 seconds -> 0.5 to 1 progress
-    const distanceFromMergePoint =
-      currentTime - mergePoints[currentMergePointIndex];
-    const progress = (distanceFromMergePoint + 1) / 2; // Convert -1,1 range to 0,1 range
-    const frame = Math.floor(progress * (totalFrames - 1));
+    const updateFrame = () => {
+      if (!lottieAnimationRef.current) return;
 
-    lottieAnimationRef.current.goToAndStop(frame, true);
+      const totalFrames = lottieAnimationRef.current.totalFrames;
+      const distanceFromMergePoint =
+        currentTime - mergePoints[currentMergePointIndex];
+      const progress = (distanceFromMergePoint + 1) / 2; // Convert -1,1 range to 0,1 range
+      const frame = Math.floor(progress * (totalFrames - 1));
+
+      // Ensure frame is within valid range
+      const clampedFrame = Math.max(0, Math.min(frame, totalFrames - 1));
+      lottieAnimationRef.current.goToAndStop(clampedFrame, true);
+
+      // Request next frame
+      animationFrameRef.current = requestAnimationFrame(updateFrame);
+    };
+
+    // Start the animation loop
+    updateFrame();
 
     return () => {
       if (lottieAnimationRef.current) {
         lottieAnimationRef.current.destroy();
         lottieAnimationRef.current = null;
+      }
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
       }
     };
   }, [layers, currentTime, mergePoints]);
