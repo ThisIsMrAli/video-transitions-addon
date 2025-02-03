@@ -387,21 +387,21 @@ export async function convertLottieToPngSequenceAndBurn(
           };
 
           // Log the SVG and image data with frame information
-          console.group(
-            `Animation ${index} - Frame ${i}/${lottieFrameCount - 1}`
-          );
-          console.log("SVG String:", svgString);
+          // console.group(
+          //   `Animation ${index} - Frame ${i}/${lottieFrameCount - 1}`
+          // );
+          // console.log("SVG String:", svgString);
           const imageUrl = `data:image/svg+xml;base64,${btoa(
             unescape(encodeURIComponent(svgString))
           )}`;
-          console.log("Image URL:", imageUrl);
-          console.log("Frame Details:", {
-            animationIndex: index,
-            currentFrame: i,
-            totalFrames: lottieFrameCount,
-            fps: fps,
-          });
-          console.groupEnd();
+          // console.log("Image URL:", imageUrl);
+          // console.log("Frame Details:", {
+          //   animationIndex: index,
+          //   currentFrame: i,
+          //   totalFrames: lottieFrameCount,
+          //   fps: fps,
+          // });
+          // console.groupEnd();
           img.src = imageUrl;
         });
       }
@@ -415,14 +415,14 @@ export async function convertLottieToPngSequenceAndBurn(
       const endPoint = mergePoints[index] + info.frameCount / info.fps;
 
       // Add debug logging to verify timing calculations
-      console.log("Overlay timing:", {
-        animationIndex: index,
-        startTime: mergePoint,
-        endTime: endPoint,
-        frameCount: info.frameCount,
-        fps: info.fps,
-        durationInSeconds: info.frameCount / info.fps,
-      });
+      // console.log("Overlay timing:", {
+      //   animationIndex: index,
+      //   startTime: mergePoint,
+      //   endTime: endPoint,
+      //   frameCount: info.frameCount,
+      //   fps: info.fps,
+      //   durationInSeconds: info.frameCount / info.fps,
+      // });
 
       if (index === 0) {
         // First part includes video scaling

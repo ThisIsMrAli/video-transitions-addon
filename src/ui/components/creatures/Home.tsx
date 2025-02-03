@@ -16,8 +16,7 @@ import BackIcon from "@spectrum-icons/workflow/ChevronLeft";
 const Home = () => {
   const navigate = useNavigate();
   const [layers, setLayers] = useAtom(layersAtom);
-  
-  
+
   return (
     <div className="w-full h-full flex flex-col items-center space-y-4 relative">
       <span className="text-black font-[900] flex w-full text-left justify-start items-center text-[18px] mb-2 ml-[12px]">
@@ -63,7 +62,10 @@ const Home = () => {
         UNSAFE_className="!mb-2 !mt-2"
         variant="accent"
         height="size-400"
-        isDisabled={layers.length == 0}
+        isDisabled={
+          layers.length === 0 ||
+          layers[layers.length - 1].assetType === "transition"
+        }
         width={`single-line-width`}
         onPress={() => navigate("/render")}
       >
