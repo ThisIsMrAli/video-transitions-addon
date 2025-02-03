@@ -1,16 +1,32 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Lottie from "lottie-web";
-
-const TransitionOverlay = ({
-  layers,
-  currentTime,
-  totalDuration,
-  activeVideoIndex,
-  getVideoDuration,
-}) => {
+import { useAtom } from "jotai";
+import { layersAtom } from "../../../store/general";
+const TransitionOverlay = ({ currentTime }) => {
   const lottieContainerRef = useRef(null);
   const lottieAnimationRef = useRef(null);
   const currentTransitionIndexRef = useRef(0);
+  const [layers, setLayers] = useAtom(layersAtom);
+  const getMergePoints = (layers) => {
+    const mergePoints = [];
+    const videoLayers = layers.filter((l) => l.assetType == "media");
+    let cumulativeDuration = 0;
+    videoLayers.forEach((layer, index) => {
+      const start = layer.start;
+      const end = layer.end;
+      const duration = end - start;
+      cumulativeDuration += duration;
+      const mergePoint = cumulativeDuration;
+      mergePoints.push(mergePoint);
+    });
+    return mergePoints;
+  };
+  const [mergePoints, setMergePoints] = useState([]);
+
+
+  useEffect(() => {
+    setMergePoints(getMergePoints(layers));
+  }, [layers]);
 
   useEffect(() => {
     const transitionLayers = layers.filter(

@@ -274,11 +274,10 @@ const ViewerBox = () => {
       >
        
           <TransitionOverlay
-            layers={layers}
+           
             currentTime={getCurrentTime()}
-            totalDuration={getTotalDuration()}
-            activeVideoIndex={activeVideoIndexRef.current}
-            getVideoDuration={getVideoDuration}
+            
+           
           />
         
         <div ref={containerRef} className="absolute inset-0 z-0" />
