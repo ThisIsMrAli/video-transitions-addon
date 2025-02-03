@@ -1,81 +1,105 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+  useCallback,
+} from "react";
 import Lottie from "lottie-web";
 import { useAtom } from "jotai";
 import { layersAtom } from "../../../store/general";
+
 const TransitionOverlay = ({ currentTime }) => {
   const lottieContainerRef = useRef(null);
   const lottieAnimationRef = useRef(null);
   const currentTransitionIndexRef = useRef(0);
-  const [layers, setLayers] = useAtom(layersAtom);
+  const [layers] = useAtom(layersAtom); // Only read from layersAtom
   const animationFrameRef = useRef(null);
-  const getMergePoints = (layers) => {
-    const mergePoints = [];
-    const videoLayers = layers.filter((l) => l.assetType == "media");
+  const lastMergePointIndexRef = useRef(-1);
+
+  // Memoize video layers and transition layers
+  const { videoLayers, transitionLayers } = useMemo(
+    () => ({
+      videoLayers: layers.filter((l) => l.assetType === "media"),
+      transitionLayers: layers.filter((l) => l.assetType === "transition"),
+    }),
+    [layers]
+  );
+
+  // Memoize merge points calculation
+  const mergePoints = useMemo(() => {
     let cumulativeDuration = 0;
-    videoLayers.forEach((layer, index) => {
-      const start = layer.start;
-      const end = layer.end;
-      const duration = end - start;
+    return videoLayers.map((layer) => {
+      const duration = layer.end - layer.start;
       cumulativeDuration += duration;
-      const mergePoint = cumulativeDuration;
-      if (index < videoLayers.length - 1) mergePoints.push(mergePoint);
+      return cumulativeDuration;
     });
-    return mergePoints;
-  };
-  const [mergePoints, setMergePoints] = useState([]);
+  }, [videoLayers]);
 
-  useEffect(() => {
-    setMergePoints(getMergePoints(layers));
-  }, [layers]);
+  // Memoize marker time calculation
+  const markerTime = useMemo(() => {
+    if (!transitionLayers.length) return 0;
+    return transitionLayers[0].animationData.markers[0].tm * (1 / 30);
+  }, [transitionLayers]);
 
-  useEffect(() => {
-    const transitionLayers = layers.filter(
-      (layer) => layer.assetType === "transition"
-    );
-    if (transitionLayers.length === 0) return;
-
-    // Get marker time in seconds (converting from frames at 30fps)
-    const markerTime =
-      transitionLayers[0].animationData.markers[0].tm * (1 / 30);
-
-    // Check if we're near any merge point, considering the marker offset
-    const isNearMergePoint = mergePoints.some((point, index) => {
-      const adjustedPoint = point - markerTime;
-      // Show transition starting from marker time before merge point
-      return currentTime >= adjustedPoint && currentTime <= point + 1;
-    });
-
-    if (!isNearMergePoint) {
-      // If not near merge point, cleanup and return
-      if (lottieAnimationRef.current) {
-        lottieAnimationRef.current.destroy();
-        lottieAnimationRef.current = null;
-      }
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-      return;
+  // Cleanup function
+  const cleanup = useCallback(() => {
+    if (lottieAnimationRef.current) {
+      lottieAnimationRef.current.destroy();
+      lottieAnimationRef.current = null;
     }
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+  }, []);
 
-    // Find the current merge point we're transitioning at
+  // Initialize Lottie animation
+  const initLottieAnimation = useCallback((transitionLayer) => {
+    if (!lottieContainerRef.current) return null;
+
+    return Lottie.loadAnimation({
+      container: lottieContainerRef.current,
+      renderer: "svg",
+      loop: false,
+      autoplay: false,
+      animationData: transitionLayer.animationData,
+    });
+  }, []);
+
+  useEffect(() => {
+    if (transitionLayers.length === 0) return cleanup;
+
+    // Find current merge point and check if we're near it
     const currentMergePointIndex = mergePoints.findIndex((point) => {
       const adjustedPoint = point - markerTime;
       return currentTime >= adjustedPoint && currentTime <= point + 1;
     });
+
+    // If we're not near any merge point or same as last frame, cleanup and return
+    if (currentMergePointIndex === -1) {
+      cleanup();
+      return;
+    }
+
+    // Optimize by preventing unnecessary re-renders for the same merge point
+    if (
+      currentMergePointIndex === lastMergePointIndexRef.current &&
+      lottieAnimationRef.current
+    ) {
+      return;
+    }
+
+    lastMergePointIndexRef.current = currentMergePointIndex;
     currentTransitionIndexRef.current =
       currentMergePointIndex % transitionLayers.length;
 
-    const currentTransitionLayer =
-      transitionLayers[currentTransitionIndexRef.current];
-
+    // Initialize new animation if needed
     if (!lottieAnimationRef.current) {
-      lottieAnimationRef.current = Lottie.loadAnimation({
-        container: lottieContainerRef.current,
-        renderer: "svg",
-        loop: false,
-        autoplay: false,
-        animationData: currentTransitionLayer.animationData,
-      });
+      cleanup();
+      lottieAnimationRef.current = initLottieAnimation(
+        transitionLayers[currentTransitionIndexRef.current]
+      );
     }
 
     const updateFrame = () => {
@@ -85,8 +109,8 @@ const TransitionOverlay = ({ currentTime }) => {
       const currentMergePoint = mergePoints[currentMergePointIndex];
       const adjustedMergePoint = currentMergePoint - markerTime;
 
-      // Calculate progress based on the adjusted timing
-      const totalDuration = markerTime + 1; // marker time plus 1 second after merge point
+      // Calculate progress
+      const totalDuration = markerTime + 1;
       const progress = (currentTime - adjustedMergePoint) / totalDuration;
       const clampedProgress = Math.max(0, Math.min(1, progress));
 
@@ -94,22 +118,20 @@ const TransitionOverlay = ({ currentTime }) => {
       const clampedFrame = Math.max(0, Math.min(frame, totalFrames - 1));
 
       lottieAnimationRef.current.goToAndStop(clampedFrame, true);
-
       animationFrameRef.current = requestAnimationFrame(updateFrame);
     };
 
     updateFrame();
-
-    return () => {
-      if (lottieAnimationRef.current) {
-        lottieAnimationRef.current.destroy();
-        lottieAnimationRef.current = null;
-      }
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, [layers, currentTime, mergePoints]);
+    return cleanup;
+  }, [
+    layers,
+    currentTime,
+    cleanup,
+    initLottieAnimation,
+    markerTime,
+    mergePoints,
+    transitionLayers,
+  ]);
 
   return (
     <div
@@ -127,4 +149,4 @@ const TransitionOverlay = ({ currentTime }) => {
   );
 };
 
-export default TransitionOverlay;
+export default React.memo(TransitionOverlay);
