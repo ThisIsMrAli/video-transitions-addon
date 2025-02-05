@@ -296,7 +296,7 @@ export async function convertLottieToPngSequenceAndBurn(
     // Validate input arrays
     if (lottieDataArray.length !== mergePoints.length) {
       throw new Error(
-        "Number of Lottie animations must match number of merge points"
+       "Number of Lottie animations must match number of merge points"
       );
     }
 

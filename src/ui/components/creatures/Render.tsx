@@ -35,7 +35,7 @@ const Render = () => {
             start: layer.start,
             end: layer.end,
           }));
-        const TransitionLayers = layers
+        let TransitionLayers = layers
           .filter((layer) => layer.assetType == "transition")
           .map((layer) => layer.animationData);
 
@@ -57,6 +57,9 @@ const Render = () => {
               mergePoints[i] - TransitionLayers[i].markers[0].tm * (1 / 30)
             );
           }
+        }
+        if (TransitionLayers.length == VideoLayers.length) {
+          TransitionLayers = TransitionLayers.slice(0, -1);
         }
 
         const blob = await convertLottieToPngSequenceAndBurn(
