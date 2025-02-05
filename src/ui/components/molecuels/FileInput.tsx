@@ -88,7 +88,7 @@ const FileInput = () => {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`cursor-pointer bg-[#f8f8f8] overflow-hidden flex flex-col justify-center items-center w-[150px] h-[150px] group rounded-[8px] outline outline-2 outline-[#EBEBEB] 
+      className={`cursor-pointer bg-[#f8f8f8] overflow-hidden flex flex-col justify-center items-center w-[150px] h-[150px] group rounded-[8px] outline outline-2 hover:outline-blue-600 outline-[#EBEBEB] 
         ${
           isDragging
             ? "bg-gray-200 outline-borderHover"

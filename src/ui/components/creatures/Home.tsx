@@ -19,7 +19,7 @@ const Home = () => {
 
   return (
     <div className="w-full h-full flex flex-col items-center space-y-4 relative">
-      <span className="text-black font-[900] flex w-full text-left justify-start items-center text-[18px] mb-2 ml-[12px]">
+      <span className="text-black font-[900] flex w-full text-left justify-start items-center text-[18px]  ml-[12px]">
         <ActionButton
           onPress={() => navigate("/")}
           isQuiet
@@ -30,6 +30,12 @@ const Home = () => {
         </ActionButton>
         Stage
       </span>
+      <div className="text-center mb-4 px-2 !mt-0">
+        <p className="text-sm text-gray-700 mt-1">
+          Create stunning video transitions and combine multiple clips with
+          professional effects.
+        </p>
+      </div>
       <TransitionSelectorOverlay />
       <ViewerBox />
       <div className="flex-1 w-full overflow-auto">
