@@ -22,9 +22,9 @@ A powerful video transitions add-on for Adobe Express, designed to help users cr
    ```bash
    npm install
    ```
-3. Build the project:
+3. Start the project:
    ```bash
-   npm run build
+   npm run start
    ```
 
 ## 🎬 Usage
