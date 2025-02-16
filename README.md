@@ -1,113 +1,103 @@
 # Adobe Express Video Transitions Add-on
 
-A powerful video transitions add-on for Adobe Express that enables users to create professional-grade video transitions with ease. This add-on allows seamless combination of multiple video clips with customizable transition effects and precise video trimming capabilities.
+A powerful video transitions add-on for Adobe Express, designed to help users create professional-grade video transitions effortlessly. With seamless clip integration, customizable effects, and precise trimming controls, this add-on enhances video editing within Adobe Express.
 
-## Features
+## ✨ Features
 
-- **Professional Transitions**: Apply high-quality transition effects between video clips
-- **Advanced Video Trimming**: Precise control over video clip start and end points
-- **Real-time Preview**: Preview your transitions and trimmed clips in real-time
-- **Multiple Aspect Ratios**: Support for vertical, horizontal, and square video formats
-- **Timeline Control**: Interactive timeline for accurate video editing
-- **FFmpeg Processing**: High-quality video rendering using FFmpeg
-- **Customizable Effects**: Adjust transition parameters to match your creative vision
+- **Professional Transitions** – High-quality transition effects between clips
+- **Advanced Video Trimming** – Precise control over clip start and end points
+- **Real-time Preview** – Instantly preview transitions and trims
+- **Multiple Aspect Ratios** – Supports vertical, horizontal, and square formats
+- **Timeline Control** – Interactive timeline for seamless editing
+- **FFmpeg Processing** – High-quality rendering using FFmpeg
+- **Customizable Effects** – Adjust transition parameters to match your creative vision
 
-## Installation
+## 🚀 Installation
 
 1. Clone the repository:
-git clone https://github.com/yourusername/adobe-express-transitions.git
-
+   ```bash
+   git clone https://github.com/yourusername/adobe-express-transitions.git
+   ```
 2. Install dependencies:
-bash
-npm install
-
+   ```bash
+   npm install
+   ```
 3. Build the project:
-bash
-npm run build
+   ```bash
+   npm run build
+   ```
 
-## Usage
+## 🎬 Usage
 
-1. Select your desired aspect ratio (Vertical, Horizontal, or Square)
-2. Upload your video clips (supported formats: MP4, WebM)
-3. Trim your videos using the interactive timeline controls:
-   - Drag the left handle to adjust the start point
-   - Drag the right handle to adjust the end point
-   - Preview trimmed sections in real-time
-4. Add transitions between clips by clicking the "Select Transition" button
-5. Preview your composition in real-time
-6. Click "Render" to process your final video using FFmpeg
-7. The rendered video will be automatically added to your Adobe Express document
+1. **Select an aspect ratio** (Vertical, Horizontal, or Square)
+2. **Upload video clips** (MP4, WebM supported)
+3. **Trim videos** using interactive timeline controls:
+   - Drag left handle to adjust start point
+   - Drag right handle to adjust end point
+   - Preview trims in real-time
+4. **Add transitions** by clicking "Select Transition"
+5. **Preview composition** in real-time
+6. **Render final video** using FFmpeg
+7. **Export video** automatically to Adobe Express
 
-## Technology Stack
+## 🛠 Technology Stack
 
-- React
-- TypeScript
-- Adobe Express Add-on SDK
-- FFmpeg for video processing and rendering
-- Lottie for transition animations
-- Tailwind CSS for styling
+- **React** – Component-based UI development
+- **TypeScript** – Type-safe development
+- **Adobe Express Add-on SDK** – Seamless integration
+- **FFmpeg** – Video processing and rendering
+- **Lottie** – Smooth transition animations
+- **Tailwind CSS** – Modern styling framework
 
-## Video Processing Features
+## 🎥 Video Processing Features
 
-### Trimming Capabilities
+### ✂️ Trimming Capabilities
 
-- Frame-accurate video trimming
-- Real-time preview of trim adjustments
+- Frame-accurate trimming
+- Real-time preview
 - Non-destructive editing
 - Visual timeline markers
 
-### FFmpeg Implementation
+### ⚡ FFmpeg Implementation
 
-- High-quality video encoding
+- High-quality encoding
 - Efficient transition rendering
-- Frame-accurate video merging
-- Optimized output file sizes
-- Hardware acceleration support when available
+- Frame-accurate merging
+- Optimized file sizes
+- Hardware acceleration support
 
-## Development
+## 🔧 Development
 
-This project has been created with `@adobe/create-ccweb-add-on`. It demonstrates advanced video manipulation capabilities while maintaining a user-friendly interface within the Adobe Express ecosystem.
+Built with `@adobe/create-ccweb-add-on`, this project showcases advanced video editing capabilities while maintaining a user-friendly interface within Adobe Express.
 
-## Performance Considerations
+## ⚡ Performance Considerations
 
-- Client-side video processing using FFmpeg WebAssembly
-- Efficient memory management for handling multiple video streams
-- Optimized transition rendering pipeline
-- Progressive video processing feedback
+- Client-side video processing with FFmpeg WebAssembly
+- Optimized memory management
+- Efficient transition rendering pipeline
+- Progressive processing feedback
 - Cancelable render operations
 
-## Contributing
+## 🤝 Contributing
 
-We welcome contributions to improve the add-on. Please feel free to submit issues and pull requests.
+We welcome contributions! Feel free to submit issues and pull requests to improve the add-on.
 
-## License
+## 📜 License
 
+This project is licensed under the **MIT License**.
+
+```
 MIT License
 
 Copyright (c) 2024 [Your Name or Organization]
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software...
+```
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+## 📩 Support
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-## Support
-
-For support, please:
+For assistance, please:
 
 - Open an issue in the GitHub repository
-- Contact us at uxplugins@gmail.com
-- Visit our website at [https://uxplugins.com/contact-us](https://uxplugins.com/contact-us)
+- Contact us at [uxplugins@gmail.com](mailto:uxplugins@gmail.com)
+- Visit [our website](https://uxplugins.com/contact-us)
