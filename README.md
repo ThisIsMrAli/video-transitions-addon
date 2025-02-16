@@ -1,3 +1,30 @@
+# Adobe Express Video Transitions Add-on
+
+A powerful video transitions add-on for Adobe Express that enables users to create professional-grade video transitions with ease. This add-on allows seamless combination of multiple video clips with customizable transition effects and precise video trimming capabilities.
+
+## Features
+
+- **Professional Transitions**: Apply high-quality transition effects between video clips
+- **Advanced Video Trimming**: Precise control over video clip start and end points
+- **Real-time Preview**: Preview your transitions and trimmed clips in real-time
+- **Multiple Aspect Ratios**: Support for vertical, horizontal, and square video formats
+- **Timeline Control**: Interactive timeline for accurate video editing
+- **FFmpeg Processing**: High-quality video rendering using FFmpeg
+- **Customizable Effects**: Adjust transition parameters to match your creative vision
+
+## Installation
+
+1. Clone the repository:
+git clone https://github.com/yourusername/adobe-express-transitions.git
+
+2. Install dependencies:
+bash
+npm install
+
+3. Build the project:
+bash
+npm run build
+
 ## Usage
 
 1. Select your desired aspect ratio (Vertical, Horizontal, or Square)
