@@ -37,9 +37,9 @@ module.exports = {
     new CopyWebpackPlugin({
       patterns: [
         { from: "src/*.json", to: "[name][ext]" },
-        { from: "src/public", to: "" },
+        { from: "src/public", to: "", noErrorOnMissing: true },
       ],
-    }),
+    })
   ],
   module: {
     rules: [
