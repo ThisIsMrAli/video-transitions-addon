@@ -9,11 +9,11 @@ async function createFFmpegInstance() {
   // Load FFmpeg in a new Worker
   await ffmpeg.load({
     coreURL: await toBlobURL(
-      "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.js",
+      "./ffmpeg-core.js",
       "text/javascript"
     ),
     wasmURL: await toBlobURL(
-      "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm/ffmpeg-core.wasm",
+      "./ffmpeg-core.wasm",
       "application/wasm"
     ),
   });
