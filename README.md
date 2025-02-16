@@ -84,15 +84,7 @@ We welcome contributions! Feel free to submit issues and pull requests to improv
 
 ## 📜 License
 
-This project is licensed under the **MIT License**.
-
-```
-MIT License
-
-Copyright (c) 2024 [Your Name or Organization]
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software...
-```
+This project is licensed under the [MIT License](LICENSE).
 
 ## 📩 Support
 
