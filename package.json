@@ -16,8 +16,8 @@
     ],
     "dependencies": {
         "@adobe/react-spectrum": "^3.38.1",
-        "@ffmpeg/ffmpeg": "^0.12.10",
-        "@ffmpeg/util": "^0.12.1",
+        "@ffmpeg/ffmpeg": "0.12.10",
+        "@ffmpeg/util": "0.12.1",
         "@react-spectrum/theme-express": "^3.0.0-alpha.16",
         "@react-spectrum/toast": "^3.0.0-beta.17",
         "@spectrum-icons/express": "^3.0.0-alpha.21",
