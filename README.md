@@ -2,6 +2,10 @@
 
 A powerful video transitions add-on for Adobe Express, designed to help users create professional-grade video transitions effortlessly. With seamless clip integration, customizable effects, and precise trimming controls, this add-on enhances video editing within Adobe Express.
 
+# Preview
+
+Try it now: [Adobe Express Video Transitions](https://adobesparkpost.app.link/TR9Mb7TXFLb?addOnId=wj2ji38h8)
+
 ## ✨ Features
 
 - **Professional Transitions** – High-quality transition effects between clips
